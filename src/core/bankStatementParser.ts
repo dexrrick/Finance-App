@@ -1,6 +1,7 @@
 import { BankStatementLine } from './types';
 
 export interface ColumnMapping {
+  headerRowIndex: number;
   dateCol: number;
   descCol: number;
   amountCol?: number;
@@ -10,74 +11,192 @@ export interface ColumnMapping {
 
 export class BankStatementParser {
   /**
-   * Parse CSV content into BankStatementLine array
+   * RFC 4180 State Machine CSV Matrix Parser
+   * Correctly handles:
+   * - Multi-line descriptions with embedded newlines within quotes
+   * - Escaped double quotes ("")
+   * - Different delimiters (comma, semicolon, tab)
    */
-  static parseCSV(csvContent: string): { lines: BankStatementLine[]; warnings: string[] } {
-    const warnings: string[] = [];
-    const rawLines = csvContent
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+  static parseCSVMatrix(content: string): string[][] {
+    const clean = content.replace(/^\uFEFF/, '');
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentCell = '';
+    let inQuotes = false;
 
-    if (rawLines.length < 2) {
-      return { lines: [], warnings: ['CSV file must have a header row and at least one data row.'] };
-    }
-
-    // Determine delimiter (comma, semicolon, or tab)
-    const firstLine = rawLines[0];
+    // Detect delimiter
     let delimiter = ',';
-    if (firstLine.includes('\t')) delimiter = '\t';
-    else if (firstLine.includes(';') && !firstLine.includes(',')) delimiter = ';';
+    const firstNonEmptyLine = clean.split(/\r?\n/).find((l) => l.trim().length > 0) || '';
+    if (firstNonEmptyLine.includes('\t')) delimiter = '\t';
+    else if (firstNonEmptyLine.includes(';') && !firstNonEmptyLine.includes(',')) delimiter = ';';
 
-    const parseRow = (rowStr: string): string[] => {
-      const result: string[] = [];
-      let inQuotes = false;
-      let cur = '';
+    for (let i = 0; i < clean.length; i++) {
+      const char = clean[i];
+      const nextChar = clean[i + 1];
 
-      for (let i = 0; i < rowStr.length; i++) {
-        const char = rowStr[i];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === delimiter && !inQuotes) {
-          result.push(cur.trim().replace(/^"|"$/g, ''));
-          cur = '';
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          currentCell += '"';
+          i++; // skip escaped quote
         } else {
-          cur += char;
+          inQuotes = !inQuotes;
+        }
+      } else if (char === delimiter && !inQuotes) {
+        currentRow.push(currentCell.trim());
+        currentCell = '';
+      } else if ((char === '\r' || char === '\n') && !inQuotes) {
+        if (char === '\r' && nextChar === '\n') {
+          i++;
+        }
+        currentRow.push(currentCell.trim());
+        currentCell = '';
+        if (currentRow.some((cell) => cell.length > 0)) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+      } else {
+        // Normalize embedded newline inside quotes into space for clean payee names
+        if (inQuotes && (char === '\r' || char === '\n')) {
+          currentCell += ' ';
+        } else {
+          currentCell += char;
         }
       }
-      result.push(cur.trim().replace(/^"|"$/g, ''));
-      return result;
-    };
-
-    const headers = parseRow(firstLine).map((h) => h.toLowerCase());
-    const mapping = this.detectColumnMapping(headers);
-
-    if (mapping.dateCol === -1 || mapping.descCol === -1) {
-      warnings.push('Could not auto-detect Date and Description columns. Falling back to first columns.');
     }
 
-    const dateCol = mapping.dateCol !== -1 ? mapping.dateCol : 0;
-    const descCol = mapping.descCol !== -1 ? mapping.descCol : 1;
+    if (currentCell || currentRow.length > 0) {
+      currentRow.push(currentCell.trim());
+      if (currentRow.some((cell) => cell.length > 0)) {
+        rows.push(currentRow);
+      }
+    }
+
+    return rows;
+  }
+
+  /**
+   * Find the true Header Row (skips bank metadata preamble lines like Account Number, Available Balance)
+   */
+  static findHeaderRow(matrix: string[][]): { headerRowIndex: number; headers: string[] } {
+    let bestScore = -1;
+    let bestIndex = 0;
+    let bestHeaders: string[] = [];
+
+    const keywords = [
+      'date',
+      'time',
+      'post',
+      'desc',
+      'payee',
+      'narrative',
+      'particular',
+      'memo',
+      'detail',
+      'merchant',
+      'remark',
+      'amount',
+      'debit',
+      'credit',
+      'withdrawal',
+      'deposit',
+      'spent',
+      'received',
+      'inflow',
+      'outflow',
+    ];
+
+    const maxScan = Math.min(matrix.length, 25);
+    for (let i = 0; i < maxScan; i++) {
+      const row = matrix[i];
+      if (row.length < 2) continue;
+
+      let score = 0;
+      row.forEach((cell) => {
+        const lower = cell.toLowerCase().trim();
+        keywords.forEach((kw) => {
+          if (lower.includes(kw)) score += 3;
+        });
+      });
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = i;
+        bestHeaders = row;
+      }
+    }
+
+    if (bestScore <= 0 && matrix.length > 0) {
+      return { headerRowIndex: 0, headers: matrix[0] };
+    }
+
+    return { headerRowIndex: bestIndex, headers: bestHeaders };
+  }
+
+  /**
+   * Parse CSV content into BankStatementLine array
+   */
+  static parseCSV(
+    csvContent: string,
+    customMapping?: Partial<ColumnMapping>
+  ): { lines: BankStatementLine[]; headers: string[]; rawRows: string[][]; warnings: string[] } {
+    const warnings: string[] = [];
+    const matrix = this.parseCSVMatrix(csvContent);
+
+    if (matrix.length < 2) {
+      return {
+        lines: [],
+        headers: [],
+        rawRows: [],
+        warnings: ['CSV file appears empty or has fewer than 2 rows.'],
+      };
+    }
+
+    const { headerRowIndex, headers } = this.findHeaderRow(matrix);
+
+    const detectedMapping = this.detectColumnMapping(headers, headerRowIndex);
+    const mapping: ColumnMapping = {
+      ...detectedMapping,
+      ...customMapping,
+      headerRowIndex: customMapping?.headerRowIndex ?? headerRowIndex,
+    };
+
+    const dateCol = mapping.dateCol;
+    const descCol = mapping.descCol;
 
     const parsedLines: BankStatementLine[] = [];
+    const sampleRows: string[][] = [];
 
-    for (let rowIdx = 1; rowIdx < rawLines.length; rowIdx++) {
-      const row = parseRow(rawLines[rowIdx]);
-      if (row.length <= Math.max(dateCol, descCol)) continue;
+    for (let r = mapping.headerRowIndex + 1; r < matrix.length; r++) {
+      const row = matrix[r];
+      if (row.length < 2) continue;
+      if (sampleRows.length < 5) sampleRows.push(row);
 
       const rawDate = row[dateCol] || '';
-      const rawDesc = row[descCol] || '';
+      const rawDesc = (row[descCol] || '').replace(/\s+/g, ' ').trim();
 
       let amount = 0;
 
-      if (mapping.amountCol !== undefined && mapping.amountCol !== -1 && row[mapping.amountCol]) {
+      // 1. Separate Inflow / Outflow or Deposits / Withdrawals
+      if (
+        (mapping.inflowCol !== undefined && mapping.inflowCol !== -1) ||
+        (mapping.outflowCol !== undefined && mapping.outflowCol !== -1)
+      ) {
+        const inflow =
+          mapping.inflowCol !== undefined && mapping.inflowCol !== -1 ? this.parseAmount(row[mapping.inflowCol] || '0') : 0;
+        const outflow =
+          mapping.outflowCol !== undefined && mapping.outflowCol !== -1 ? this.parseAmount(row[mapping.outflowCol] || '0') : 0;
+
+        if (Math.abs(inflow) > 0) {
+          amount = Math.abs(inflow);
+        } else if (Math.abs(outflow) > 0) {
+          amount = -Math.abs(outflow);
+        }
+      }
+      // 2. Single amount column
+      else if (mapping.amountCol !== undefined && mapping.amountCol !== -1 && row[mapping.amountCol]) {
         amount = this.parseAmount(row[mapping.amountCol]);
-      } else if (mapping.inflowCol !== undefined && mapping.outflowCol !== undefined) {
-        const inflow = mapping.inflowCol !== -1 ? this.parseAmount(row[mapping.inflowCol] || '0') : 0;
-        const outflow = mapping.outflowCol !== -1 ? this.parseAmount(row[mapping.outflowCol] || '0') : 0;
-        amount = inflow > 0 ? inflow : -Math.abs(outflow);
       } else {
-        // Search remaining numeric column
+        // Fallback: search remaining columns for numbers
         for (let c = 0; c < row.length; c++) {
           if (c !== dateCol && c !== descCol) {
             const val = this.parseAmount(row[c]);
@@ -94,7 +213,7 @@ export class BankStatementParser {
       const normalizedDate = this.normalizeDate(rawDate);
 
       parsedLines.push({
-        id: 'bank-line-' + rowIdx + '-' + Date.now(),
+        id: 'bank-line-' + r + '-' + Date.now(),
         date: normalizedDate,
         description: rawDesc || 'Bank Transaction',
         amount,
@@ -102,13 +221,19 @@ export class BankStatementParser {
       });
     }
 
-    return { lines: parsedLines, warnings };
+    if (parsedLines.length === 0) {
+      warnings.push(
+        `Found ${matrix.length} rows, but could not detect valid transaction amounts. Try adjusting the column mapping manually.`
+      );
+    }
+
+    return { lines: parsedLines, headers, rawRows: sampleRows, warnings };
   }
 
   /**
-   * Auto-detect header column positions
+   * Auto-detect header column indices
    */
-  private static detectColumnMapping(headers: string[]): ColumnMapping {
+  static detectColumnMapping(headers: string[], headerRowIndex = 0): ColumnMapping {
     let dateCol = -1;
     let descCol = -1;
     let amountCol = -1;
@@ -116,110 +241,174 @@ export class BankStatementParser {
     let outflowCol = -1;
 
     headers.forEach((h, idx) => {
-      const col = h.replace(/[^a-z0-9]/g, '');
+      const lower = h.toLowerCase().trim();
 
       // Date
-      if (['date', 'transdate', 'transactiondate', 'postdate', 'postingdate', 'valuedate'].includes(col)) {
-        if (dateCol === -1) dateCol = idx;
-      }
-      // Description
-      else if (
-        ['description', 'desc', 'payee', 'narrative', 'memo', 'details', 'name', 'particulars'].includes(col)
+      if (
+        (lower.includes('date') || lower.includes('posted') || lower.includes('time')) &&
+        !lower.includes('value') && // prefer Transaction Date over Value Date if both exist
+        dateCol === -1
       ) {
-        if (descCol === -1) descCol = idx;
+        dateCol = idx;
       }
-      // Amount (single signed column)
-      else if (['amount', 'netamount', 'sum', 'total'].includes(col)) {
-        if (amountCol === -1) amountCol = idx;
-      }
-      // Inflow / Credit
-      else if (['credit', 'inflow', 'deposit', 'cr', 'received'].includes(col)) {
+      // Inflow / Deposit / Credit
+      else if (
+        lower.includes('deposit') ||
+        lower.includes('credit') ||
+        lower.includes('inflow') ||
+        lower.includes('paid in') ||
+        lower.includes('money in') ||
+        lower.includes('received')
+      ) {
         inflowCol = idx;
       }
-      // Outflow / Debit
-      else if (['debit', 'outflow', 'withdrawal', 'dr', 'spent', 'paidout'].includes(col)) {
+      // Outflow / Withdrawal / Debit
+      else if (
+        lower.includes('withdrawal') ||
+        lower.includes('debit') ||
+        lower.includes('outflow') ||
+        lower.includes('paid out') ||
+        lower.includes('money out') ||
+        lower.includes('charge') ||
+        lower.includes('spent')
+      ) {
         outflowCol = idx;
+      }
+      // Description / Payee
+      else if (
+        (lower.includes('desc') ||
+          lower.includes('payee') ||
+          lower.includes('narrative') ||
+          lower.includes('memo') ||
+          lower.includes('detail') ||
+          lower.includes('merchant') ||
+          lower.includes('particular') ||
+          lower.includes('remark') ||
+          lower.includes('name')) &&
+        descCol === -1
+      ) {
+        descCol = idx;
+      }
+      // Amount (single column)
+      else if (
+        (lower.includes('amount') || lower.includes('total') || lower.includes('sum') || lower.includes('net')) &&
+        !lower.includes('balance') &&
+        amountCol === -1
+      ) {
+        amountCol = idx;
       }
     });
 
-    return { dateCol, descCol, amountCol, inflowCol, outflowCol };
+    // Fallbacks if not matched
+    if (dateCol === -1) {
+      headers.forEach((h, idx) => {
+        if (h.toLowerCase().includes('date') && dateCol === -1) dateCol = idx;
+      });
+    }
+    if (dateCol === -1) dateCol = 0;
+    if (descCol === -1) descCol = Math.min(2, headers.length - 1);
+
+    if (inflowCol === -1 && outflowCol === -1 && amountCol === -1) {
+      amountCol = Math.min(3, headers.length - 1);
+    }
+
+    return { headerRowIndex, dateCol, descCol, amountCol, inflowCol, outflowCol };
   }
 
   /**
-   * Clean and parse currency string
+   * Parse amounts with currency signs, commas, and negative signs
    */
-  private static parseAmount(str: string): number {
+  static parseAmount(str: string): number {
     if (!str) return 0;
-    let cleaned = str.trim().replace(/[$€£¥]/g, '');
+    let cleaned = str.trim();
 
-    // Check accounting negative: (100.50) -> -100.50
+    // Strip currency symbols and letters
+    cleaned = cleaned.replace(/[$€£¥SGD|USD|EUR|GBP|AUD]/gi, '').trim();
+
+    // Check accounting parentheses: (100.50) -> -100.50
     let isNegative = false;
     if (cleaned.startsWith('(') && cleaned.endsWith(')')) {
       isNegative = true;
       cleaned = cleaned.substring(1, cleaned.length - 1);
-    } else if (cleaned.startsWith('-')) {
+    } else if (cleaned.startsWith('-') || cleaned.endsWith('-')) {
       isNegative = true;
+      cleaned = cleaned.replace(/-/g, '');
+    } else if (cleaned.startsWith('+')) {
       cleaned = cleaned.substring(1);
     }
 
-    // Remove thousands commas
-    cleaned = cleaned.replace(/,/g, '');
+    // Handle European numbers: 1.234,56 -> 1234.56
+    if (cleaned.includes(',') && cleaned.includes('.')) {
+      if (cleaned.indexOf(',') > cleaned.indexOf('.')) {
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+      } else {
+        cleaned = cleaned.replace(/,/g, '');
+      }
+    } else if (cleaned.includes(',') && !cleaned.includes('.')) {
+      const parts = cleaned.split(',');
+      if (parts[parts.length - 1].length === 2) {
+        cleaned = cleaned.replace(',', '.');
+      } else {
+        cleaned = cleaned.replace(/,/g, '');
+      }
+    }
+
+    cleaned = cleaned.replace(/\s+/g, '');
     const num = parseFloat(cleaned);
     if (isNaN(num)) return 0;
     return isNegative ? -num : num;
   }
 
   /**
-   * Normalize various date strings into YYYY-MM-DD
+   * Normalize any international date into YYYY-MM-DD
    */
-  private static normalizeDate(dateStr: string): string {
+  static normalizeDate(dateStr: string): string {
     const trimmed = (dateStr || '').trim();
     if (!trimmed) return new Date().toISOString().split('T')[0];
 
-    // Already YYYY-MM-DD
+    // YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
 
-    // MM/DD/YYYY or DD/MM/YYYY
-    const slashParts = trimmed.split(/[/.-]/);
-    if (slashParts.length === 3) {
-      let [p1, p2, p3] = slashParts;
-      if (p3.length === 4) {
-        // P3 is year
-        const year = p3;
-        const month = p1.padStart(2, '0');
-        const day = p2.padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      } else if (p1.length === 4) {
-        // P1 is year
-        return `${p1}-${p2.padStart(2, '0')}-${p3.padStart(2, '0')}`;
-      }
+    // YYYY/MM/DD
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(trimmed)) {
+      return trimmed.replace(/\//g, '-');
     }
 
-    // Try standard Date parsing
+    // DD/MM/YYYY or MM/DD/YYYY
+    const slashMatch = trimmed.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
+    if (slashMatch) {
+      let [, p1, p2, p3] = slashMatch;
+      let year = p3.length === 2 ? '20' + p3 : p3;
+      let day = p1.padStart(2, '0');
+      let month = p2.padStart(2, '0');
+      // Standard Singapore/UK format: DD/MM/YYYY
+      return `${year}-${month}-${day}`;
+    }
+
+    // Standard JavaScript Date parsing
     const parsed = new Date(trimmed);
     if (!isNaN(parsed.getTime())) {
-      return parsed.toISOString().split('T')[0];
+      const y = parsed.getFullYear();
+      const m = String(parsed.getMonth() + 1).padStart(2, '0');
+      const d = String(parsed.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
 
     return new Date().toISOString().split('T')[0];
   }
 
   /**
-   * Generate a realistic monthly bank CSV for instant testing
+   * Sample Demo Statement
    */
   static generateDemoBankCSV(): string {
-    return `Date,Description,Amount
-2026-03-01,GLOBAL TECH CORP DIRECT DEP SALARY,5200.00
-2026-03-02,WHOLE FOODS MKT #1088 SAN FRANCISCO,-94.50
-2026-03-03,AVALON BAY APARTMENTS MONTHLY RENT,-1850.00
-2026-03-04,STARBUCKS STORE #28441 COFFEE,-6.75
-2026-03-05,UBER TRIP PENDING RIDE,-24.80
-2026-03-06,WALMART SUPERCENTER GROCERIES,-112.30
-2026-03-07,CONEDISON ELECTRIC UTILITY BILL,-85.40
-2026-03-08,NETFLIX.COM DIGITAL SUBSCRIPTION,-19.99
-2026-03-09,SHELL OIL GAS STATION PETROL,-48.20
-2026-03-10,FREELANCE DESIGN INVOICE PAYMENT,950.00
-2026-03-11,SPOTIFY USA MONTHLY AUDIO,-11.99
-2026-03-12,CITY WATER AND SEWER UTILITY,-42.10`;
+    return `Transaction date,Value date,Description,Withdrawals(SGD),Deposits(SGD)
+03/09/2026,03/09/2026,"FAST PAYMENT via PayNow-Mobile to MIXX ANX",29.88,
+03/09/2026,03/09/2026,"PAYMENT/TRANSFER via PayNow-DBSS from LIM KHAI",,28.00
+20/08/2026,20/08/2026,"IBG GIRO Aug 2026 Salary IN.CORP GLOBAL PTE",,"3,998.50"
+19/08/2026,19/08/2026,"CCRD-Credit Card Payment to Citibank","1,280.57",
+16/08/2026,17/08/2026,"STASHAWAY SA-CR-AW4Q8R9V OTHR StashAway","1,000.00",
+12/08/2026,12/08/2026,"BONUS INTEREST 360 SALARY BONUS",,13.69
+30/08/2026,31/08/2026,"NETS QR ENG KEE CHICKEN WINGS",5.20,
+31/08/2026,31/08/2026,"INTEREST CREDIT",,0.74`;
   }
 }

@@ -20,6 +20,42 @@ export const DEFAULT_BANK_RULES: BankRule[] = [
     defaultPayee: 'Payroll Deposit',
   },
   {
+    id: 'rule-interest-credit',
+    name: 'Bank Account Interest Credit',
+    pattern: 'interest',
+    condition: 'contains',
+    direction: 'inflow',
+    targetAccountId: '4030', // Revenue: Interest & Dividends
+    defaultPayee: 'Bank Interest',
+  },
+  {
+    id: 'rule-credit-card-pmt',
+    name: 'Credit Card Bill Payment',
+    pattern: 'credit card',
+    condition: 'contains',
+    direction: 'outflow',
+    targetAccountId: '2010', // Liability: Credit Card
+    defaultPayee: 'Credit Card Payment',
+  },
+  {
+    id: 'rule-citibank',
+    name: 'Citibank Card Payment',
+    pattern: 'citibank',
+    condition: 'contains',
+    direction: 'outflow',
+    targetAccountId: '2010', // Liability: Credit Card
+    defaultPayee: 'Citibank Credit Card',
+  },
+  {
+    id: 'rule-nets-food',
+    name: 'NETS QR Merchant Purchase',
+    pattern: 'nets qr',
+    condition: 'contains',
+    direction: 'outflow',
+    targetAccountId: '5010', // Expense: Groceries & Food
+    defaultPayee: 'NETS Merchant',
+  },
+  {
     id: 'rule-rent',
     name: 'Rent & Housing Lease',
     pattern: 'rent',
