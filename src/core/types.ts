@@ -34,6 +34,8 @@ export interface Transaction {
     simpleMode?: 'expense' | 'income' | 'transfer' | 'journal';
     paymentAccountId?: string;
     categoryAccountId?: string;
+    reconciledFromLineId?: string;
+    memo?: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -142,10 +144,33 @@ export interface AuthResponse {
   user?: UserProfile;
 }
 
+export interface BankStatementLine {
+  id: string;
+  date: string;
+  description: string;
+  amount: number; // positive = Money In / Inflow, negative = Money Out / Spent
+  status: 'unreconciled' | 'reconciled' | 'ignored';
+  matchedRuleId?: string;
+  suggestedAccountId?: string;
+  suggestedPayee?: string;
+  reconciledTxId?: string;
+}
+
+export interface BankRule {
+  id: string;
+  name: string;
+  pattern: string; // e.g. "salary", "uber", "walmart"
+  condition: 'contains' | 'equals' | 'starts_with';
+  direction: 'any' | 'inflow' | 'outflow';
+  targetAccountId: string; // Account code e.g. "4010", "5010"
+  defaultPayee?: string;
+}
+
 export interface AppSettings {
   currencySymbol: string;
   dateFormat: string;
   enableSound: boolean;
+  theme?: 'dark' | 'light';
   auth?: {
     user: UserProfile | null;
     token: string | null;
@@ -170,6 +195,7 @@ export interface AppSettings {
   disasters?: DisasterRecord[];
   budgetConfig?: BudgetConfig;
   realmState?: RealmState;
+  bankRules?: BankRule[];
 }
 
 export interface AppDataBackup {

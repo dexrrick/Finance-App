@@ -13,6 +13,7 @@ import { MiniGamesHub } from './components/games/MiniGamesHub';
 import { TransactionModal } from './components/TransactionModal';
 import { BackupSyncModal } from './components/BackupSyncModal';
 import { AuthModal } from './components/AuthModal';
+import { BankReconciliationView } from './components/BankReconciliationView';
 
 import { evaluateTransactionImpact } from './core/gamificationEngine';
 
@@ -57,6 +58,12 @@ export function App() {
   useEffect(() => {
     AppDatabase.saveSettings(settings);
   }, [settings]);
+
+  // Sync global body theme for Day / Night mode
+  useEffect(() => {
+    const isLight = settings.theme === 'light';
+    document.body.className = isLight ? 'theme-light' : 'theme-dark';
+  }, [settings.theme]);
 
   // Check trial balance for books balance verification
   const trialBalance = generateTrialBalance(accounts, transactions);
@@ -156,6 +163,41 @@ export function App() {
     setSettings(res.settings);
   };
 
+  // Save Reconciled Transactions from Bank Feed (Batch or Single)
+  const handleSaveReconciledTransactions = (newTxs: Transaction[]) => {
+    const updated = [...newTxs, ...transactions];
+    setTransactions(updated);
+
+    // Gamification: evaluate transaction impact on Living Civilization Realm
+    let curSettings = settings;
+    newTxs.forEach((tx) => {
+      const impact = evaluateTransactionImpact(tx, accounts, curSettings);
+      curSettings = impact.updatedSettings;
+    });
+    setSettings(curSettings);
+
+    setRealmToast({
+      type: 'success',
+      message: `✓ Reconciled ${newTxs.length} transaction${newTxs.length > 1 ? 's' : ''} into ledger!`,
+    });
+    setTimeout(() => setRealmToast(null), 4500);
+
+    // Optional background auto-sync to Cloudflare
+    if (
+      curSettings.cloudSync?.autoSync &&
+      curSettings.cloudSync?.workerUrl &&
+      (curSettings.cloudSync?.secretKey || authToken)
+    ) {
+      CloudflareSyncClient.pushToCloud(
+        curSettings.cloudSync.workerUrl,
+        curSettings.cloudSync.secretKey || authToken || '',
+        accounts,
+        updated,
+        curSettings
+      ).catch(() => {});
+    }
+  };
+
   // Authentication Handlers
   const handleAuthSuccess = (user: UserProfile, token: string) => {
     setCurrentUser(user);
@@ -201,8 +243,24 @@ export function App() {
     }));
   };
 
+  // Toggle Day / Night Theme
+  const handleToggleTheme = () => {
+    const nextTheme = settings.theme === 'light' ? 'dark' : 'light';
+    const updated: AppSettings = {
+      ...settings,
+      theme: nextTheme,
+    };
+    setSettings(updated);
+  };
+
+  const isLight = settings.theme === 'light';
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div
+      className={`min-h-screen flex flex-col transition-colors duration-200 ${
+        isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#080c14] text-slate-100'
+      }`}
+    >
       {/* Top Sticky Navigation */}
       <Navigation
         activeTab={activeTab}
@@ -211,6 +269,7 @@ export function App() {
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
+        onToggleTheme={handleToggleTheme}
         currentUser={currentUser}
         settings={settings}
         trialBalanceBalanced={trialBalance.isBalanced}
@@ -261,6 +320,15 @@ export function App() {
             onEditTransaction={handleSelectTransactionToEdit}
             onDeleteTransaction={handleDeleteTransaction}
             onOpenNewTransaction={() => handleOpenTransactionModal('journal')}
+          />
+        )}
+
+        {activeTab === 'reconcile' && (
+          <BankReconciliationView
+            accounts={accounts}
+            settings={settings}
+            onSaveTransactions={handleSaveReconciledTransactions}
+            onUpdateSettings={setSettings}
           />
         )}
 

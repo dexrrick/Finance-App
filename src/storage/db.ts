@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   currencySymbol: '$',
   dateFormat: 'YYYY-MM-DD',
   enableSound: true,
+  theme: 'dark',
   cloudSync: {
     workerUrl: '',
     secretKey: '',
