@@ -128,10 +128,29 @@ export interface RealmState {
   lastActiveDisaster?: DisasterRecord | null;
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  token?: string;
+  user?: UserProfile;
+}
+
 export interface AppSettings {
   currencySymbol: string;
   dateFormat: string;
   enableSound: boolean;
+  auth?: {
+    user: UserProfile | null;
+    token: string | null;
+    isGuest?: boolean;
+  };
   cloudSync?: {
     workerUrl: string;
     secretKey: string;

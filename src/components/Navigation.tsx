@@ -12,8 +12,11 @@ import {
   Landmark,
   ShieldCheck,
   Download,
+  User,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
-import { AppSettings } from '../core/types';
+import { AppSettings, UserProfile } from '../core/types';
 
 export type ActiveTab = 'dashboard' | 'journal' | 'accounts' | 'reports' | 'games';
 
@@ -22,6 +25,9 @@ interface NavigationProps {
   setActiveTab: (tab: ActiveTab) => void;
   onOpenTransactionModal: (mode?: 'expense' | 'income' | 'transfer' | 'journal') => void;
   onOpenBackupModal: () => void;
+  onOpenAuthModal: () => void;
+  onLogout: () => void;
+  currentUser: UserProfile | null;
   settings: AppSettings;
   trialBalanceBalanced: boolean;
 }
@@ -31,10 +37,13 @@ export const Navigation: React.FC<NavigationProps> = ({
   setActiveTab,
   onOpenTransactionModal,
   onOpenBackupModal,
+  onOpenAuthModal,
+  onLogout,
+  currentUser,
   settings,
   trialBalanceBalanced,
 }) => {
-  const isCloudConfigured = Boolean(settings.cloudSync?.workerUrl && settings.cloudSync?.secretKey);
+  const isCloudConfigured = Boolean(settings.cloudSync?.workerUrl && (settings.cloudSync?.secretKey || currentUser));
 
   return (
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
@@ -162,6 +171,37 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </>
               )}
             </button>
+
+            {/* User Account / Profile Badge */}
+            {currentUser ? (
+              <div className="flex items-center gap-1.5 pl-1">
+                <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700/60 text-xs">
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                    {currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <span className="hidden md:inline font-medium text-slate-200 truncate max-w-[100px]">
+                    {currentUser.username || currentUser.email.split('@')[0]}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  title="Log Out"
+                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenAuthModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 transition-all"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Log In</span>
+              </button>
+            )}
 
             {/* Quick Record Button */}
             <div className="relative group">

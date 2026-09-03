@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Account, AppDataBackup, AppSettings, Transaction } from './core/types';
+import { Account, AppDataBackup, AppSettings, Transaction, UserProfile } from './core/types';
 import { AppDatabase } from './storage/db';
 import { generateTrialBalance } from './core/accounting';
 import { CloudflareSyncClient } from './storage/cloudflare';
+import { AuthService } from './storage/auth';
 import { Navigation, ActiveTab } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { JournalView } from './components/JournalView';
@@ -11,6 +12,7 @@ import { ReportsView } from './components/ReportsView';
 import { MiniGamesHub } from './components/games/MiniGamesHub';
 import { TransactionModal } from './components/TransactionModal';
 import { BackupSyncModal } from './components/BackupSyncModal';
+import { AuthModal } from './components/AuthModal';
 
 import { evaluateTransactionImpact } from './core/gamificationEngine';
 
@@ -20,6 +22,13 @@ export function App() {
     AppDatabase.loadTransactions()
   );
   const [settings, setSettings] = useState<AppSettings>(() => AppDatabase.loadSettings());
+
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => AuthService.getCurrentSession().user);
+  const [authToken, setAuthToken] = useState<string | null>(() => AuthService.getCurrentSession().token);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(
+    () => !AuthService.getCurrentSession().user && !AppDatabase.loadSettings().auth?.isGuest
+  );
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
 
@@ -147,6 +156,51 @@ export function App() {
     setSettings(res.settings);
   };
 
+  // Authentication Handlers
+  const handleAuthSuccess = (user: UserProfile, token: string) => {
+    setCurrentUser(user);
+    setAuthToken(token);
+    setIsAuthModalOpen(false);
+
+    const updatedSettings: AppSettings = {
+      ...settings,
+      auth: { user, token, isGuest: false },
+    };
+    setSettings(updatedSettings);
+
+    // Auto-pull user's remote cloud vault if Cloudflare is configured
+    if (updatedSettings.cloudSync?.workerUrl) {
+      CloudflareSyncClient.pullFromCloud(updatedSettings.cloudSync.workerUrl, token)
+        .then((res) => {
+          if (res.success && res.data) {
+            setAccounts(res.data.accounts);
+            setTransactions(res.data.transactions);
+            if (res.data.settings) setSettings(res.data.settings);
+          }
+        })
+        .catch(() => {});
+    }
+  };
+
+  const handleLogout = () => {
+    AuthService.logout();
+    setCurrentUser(null);
+    setAuthToken(null);
+    setSettings((prev) => ({
+      ...prev,
+      auth: { user: null, token: null, isGuest: false },
+    }));
+    setIsAuthModalOpen(true);
+  };
+
+  const handleContinueAsGuest = () => {
+    setIsAuthModalOpen(false);
+    setSettings((prev) => ({
+      ...prev,
+      auth: { user: null, token: null, isGuest: true },
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500/30 selection:text-indigo-200">
       {/* Top Sticky Navigation */}
@@ -155,6 +209,9 @@ export function App() {
         setActiveTab={setActiveTab}
         onOpenTransactionModal={handleOpenTransactionModal}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
+        currentUser={currentUser}
         settings={settings}
         trialBalanceBalanced={trialBalance.isBalanced}
       />
@@ -280,6 +337,15 @@ export function App() {
         onUpdateSettings={setSettings}
         onResetDemo={handleResetDemo}
         onClearAll={handleClearAll}
+      />
+
+      {/* Bank-Grade Authentication & Vault Gate Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+        onContinueAsGuest={handleContinueAsGuest}
+        workerUrl={settings.cloudSync?.workerUrl}
       />
     </div>
   );

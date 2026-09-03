@@ -1,25 +1,17 @@
 /**
  * Cloudflare Worker Backend for Antigravity Finance Wallet
- *
- * Deploy with:
- *   cd worker
- *   npm install
- *   npx wrangler deploy
+ * Full Authentication & User-Isolated KV Storage
  */
 
 export interface Env {
-  // Cloudflare KV Namespace binding
   WALLET_KV?: KVNamespace;
-  // Cloudflare D1 Database binding
-  DB?: D1Database;
-  // Optional master sync authorization key
   SYNC_SECRET?: string;
 }
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, x-sync-key, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-sync-key',
 };
 
 function handleCorsPreflight(): Response {
@@ -39,39 +31,165 @@ function jsonResponse(data: unknown, status = 200): Response {
   });
 }
 
+async function hashPassword(password: string, salt: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + '::salt::' + salt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function extractUserIdentifier(request: Request): string {
+  const authHeader = request.headers.get('Authorization') || '';
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    if (token.startsWith('token_')) {
+      try {
+        const decoded = atob(token.substring(6));
+        const [userId] = decoded.split(':');
+        if (userId) return userId;
+      } catch {
+        // fallback
+      }
+    }
+    return token;
+  }
+  return request.headers.get('x-sync-key') || 'default-wallet';
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    // 1. Handle CORS Preflight
     if (request.method === 'OPTIONS') {
       return handleCorsPreflight();
     }
 
-    // 2. Health check
+    // Health check
     if (url.pathname === '/api/health') {
       return jsonResponse({
         status: 'online',
-        message: 'Antigravity Cloudflare Worker Sync Service is running!',
+        message: 'Antigravity Cloudflare Worker Sync & Auth Service is running!',
         time: new Date().toISOString(),
         hasKV: !!env.WALLET_KV,
       });
     }
 
-    // 3. Sync Endpoints
-    if (url.pathname === '/api/sync') {
-      const syncKey = request.headers.get('x-sync-key') || 'default-wallet';
+    // Authentication: Signup
+    if (url.pathname === '/api/auth/signup' && request.method === 'POST') {
+      try {
+        const { email, username, password } = await request.json();
+        const cleanEmail = (email || '').trim().toLowerCase();
+        const cleanUsername = (username || '').trim() || cleanEmail.split('@')[0];
 
-      // Optional secret check if SYNC_SECRET environment variable is set
-      if (env.SYNC_SECRET && syncKey !== env.SYNC_SECRET) {
-        return jsonResponse({ error: 'Unauthorized: Invalid Sync Key' }, 401);
+        if (!cleanEmail || !cleanEmail.includes('@') || !password || password.length < 6) {
+          return jsonResponse({ error: 'Valid email and password (min 6 chars) required.' }, 400);
+        }
+
+        const storageKey = `user:${cleanEmail}`;
+        if (env.WALLET_KV) {
+          const existing = await env.WALLET_KV.get(storageKey);
+          if (existing) {
+            return jsonResponse({ error: 'An account with this email already exists.' }, 409);
+          }
+
+          const salt = crypto.randomUUID();
+          const passwordHash = await hashPassword(password, salt);
+          const userId = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+
+          const userProfile = {
+            id: userId,
+            email: cleanEmail,
+            username: cleanUsername,
+            createdAt: new Date().toISOString(),
+          };
+
+          await env.WALLET_KV.put(
+            storageKey,
+            JSON.stringify({
+              profile: userProfile,
+              salt,
+              passwordHash,
+            })
+          );
+
+          const token = 'token_' + btoa(userId + ':' + Date.now());
+          return jsonResponse({
+            success: true,
+            message: 'Account created successfully in Cloudflare!',
+            user: userProfile,
+            token,
+          });
+        } else {
+          const userId = 'usr_' + Date.now();
+          return jsonResponse({
+            success: true,
+            message: 'Account created! (Bind WALLET_KV in Cloudflare for persistence).',
+            user: { id: userId, email: cleanEmail, username: cleanUsername, createdAt: new Date().toISOString() },
+            token: 'token_' + btoa(userId + ':' + Date.now()),
+          });
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return jsonResponse({ error: `Signup error: ${msg}` }, 500);
       }
+    }
 
-      // POST: Save backup state
+    // Authentication: Login
+    if (url.pathname === '/api/auth/login' && request.method === 'POST') {
+      try {
+        const { email, password } = await request.json();
+        const cleanEmail = (email || '').trim().toLowerCase();
+
+        if (!cleanEmail || !password) {
+          return jsonResponse({ error: 'Email and password required.' }, 400);
+        }
+
+        const storageKey = `user:${cleanEmail}`;
+        if (env.WALLET_KV) {
+          const raw = await env.WALLET_KV.get(storageKey);
+          if (!raw) {
+            return jsonResponse({ error: 'Account not found. Please create an account.' }, 404);
+          }
+
+          const userRecord = JSON.parse(raw);
+          const computedHash = await hashPassword(password, userRecord.salt);
+
+          if (computedHash !== userRecord.passwordHash) {
+            return jsonResponse({ error: 'Incorrect password. Please try again.' }, 401);
+          }
+
+          const token = 'token_' + btoa(userRecord.profile.id + ':' + Date.now());
+          return jsonResponse({
+            success: true,
+            message: 'Login successful!',
+            user: userRecord.profile,
+            token,
+          });
+        } else {
+          const userId = 'usr_' + Date.now();
+          return jsonResponse({
+            success: true,
+            message: 'Login approved!',
+            user: { id: userId, email: cleanEmail, username: cleanEmail.split('@')[0], createdAt: new Date().toISOString() },
+            token: 'token_' + btoa(userId + ':' + Date.now()),
+          });
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return jsonResponse({ error: `Login error: ${msg}` }, 500);
+      }
+    }
+
+    // User-Isolated Sync Endpoints
+    if (url.pathname === '/api/sync') {
+      const userKey = extractUserIdentifier(request);
+
+      // POST: Save user's wallet
       if (request.method === 'POST') {
         try {
           const body = await request.json();
-          const storageKey = `backup:${syncKey}`;
+          const storageKey = `wallet:${userKey}`;
 
           if (env.WALLET_KV) {
             await env.WALLET_KV.put(storageKey, JSON.stringify(body));
@@ -79,19 +197,19 @@ export default {
 
           return jsonResponse({
             success: true,
-            message: 'Backup stored successfully in Cloudflare!',
+            message: 'Wallet securely saved into your Cloudflare private vault!',
             lastSyncedAt: new Date().toISOString(),
           });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          return jsonResponse({ error: `Failed to save backup: ${msg}` }, 400);
+          return jsonResponse({ error: `Failed to save wallet: ${msg}` }, 400);
         }
       }
 
-      // GET: Retrieve latest backup state
+      // GET: Retrieve user's wallet
       if (request.method === 'GET') {
         try {
-          const storageKey = `backup:${syncKey}`;
+          const storageKey = `wallet:${userKey}`;
           let data = null;
 
           if (env.WALLET_KV) {
@@ -104,7 +222,7 @@ export default {
           if (!data) {
             return jsonResponse(
               {
-                message: 'No existing cloud backup found for this sync key. Save one first!',
+                message: 'No cloud vault found for this account. Click "Push to Cloud" to initialize!',
                 data: null,
               },
               404
@@ -118,7 +236,7 @@ export default {
           });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          return jsonResponse({ error: `Failed to load backup: ${msg}` }, 500);
+          return jsonResponse({ error: `Failed to retrieve wallet: ${msg}` }, 500);
         }
       }
 

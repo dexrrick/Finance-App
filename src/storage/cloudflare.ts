@@ -13,17 +13,39 @@ export interface CloudflareSyncResult {
 
 export class CloudflareSyncClient {
   /**
-   * Test connection to a deployed Cloudflare Worker
+   * Helper to normalize worker URL (supports relative / or empty for same-domain Cloudflare Pages)
+   */
+  private static resolveBaseUrl(workerUrl: string): string {
+    const trimmed = (workerUrl || '').trim();
+    if (!trimmed || trimmed === '/') {
+      return '';
+    }
+    // If user passed just the domain or path
+    return trimmed.replace(/\/+$/, '');
+  }
+
+  /**
+   * Test connection to a deployed Cloudflare Worker or Cloudflare Pages Function
    */
   static async testConnection(workerUrl: string, secretKey: string): Promise<{ success: boolean; message: string }> {
     try {
-      const cleanUrl = workerUrl.replace(/\/+$/, '');
-      const response = await fetch(`${cleanUrl}/api/health`, {
+      const baseUrl = this.resolveBaseUrl(workerUrl);
+      const targetUrl = `${baseUrl}/api/health`;
+
+      const response = await fetch(targetUrl, {
         method: 'GET',
         headers: {
           'x-sync-key': secretKey,
         },
       });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return {
+          success: false,
+          message: `The URL returned a web page (HTML) instead of the Cloudflare API. If you deployed via Cloudflare Pages, push the newly added 'functions/' folder to GitHub so Cloudflare can activate your backend API automatically!`,
+        };
+      }
 
       if (!response.ok) {
         return {
@@ -35,19 +57,19 @@ export class CloudflareSyncClient {
       const json = await response.json();
       return {
         success: true,
-        message: json.message || 'Successfully connected to Cloudflare Worker!',
+        message: json.message || 'Successfully connected to Cloudflare Worker & Storage!',
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return {
         success: false,
-        message: `Connection failed: ${msg}. Make sure CORS is enabled and URL is accessible.`,
+        message: `Connection failed: ${msg}. Make sure the Worker is deployed and accessible.`,
       };
     }
   }
 
   /**
-   * Push local wallet state to Cloudflare Worker
+   * Push local wallet state to Cloudflare Worker or Pages Function
    */
   static async pushToCloud(
     workerUrl: string,
@@ -57,7 +79,9 @@ export class CloudflareSyncClient {
     settings: AppSettings
   ): Promise<CloudflareSyncResult> {
     try {
-      const cleanUrl = workerUrl.replace(/\/+$/, '');
+      const baseUrl = this.resolveBaseUrl(workerUrl);
+      const targetUrl = `${baseUrl}/api/sync`;
+
       const payload: AppDataBackup = {
         version: 1,
         exportedAt: new Date().toISOString(),
@@ -67,7 +91,7 @@ export class CloudflareSyncClient {
         settings,
       };
 
-      const response = await fetch(`${cleanUrl}/api/sync`, {
+      const response = await fetch(targetUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,6 +99,14 @@ export class CloudflareSyncClient {
         },
         body: JSON.stringify(payload),
       });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return {
+          success: false,
+          message: `Endpoint returned HTML instead of JSON. Make sure Cloudflare Pages has the 'functions/' folder deployed from GitHub.`,
+        };
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -87,7 +119,7 @@ export class CloudflareSyncClient {
       const json = await response.json();
       return {
         success: true,
-        message: json.message || 'Data successfully backed up to Cloudflare!',
+        message: json.message || 'Your wallet data was successfully backed up to Cloudflare!',
         data: {
           accounts,
           transactions,
@@ -105,20 +137,30 @@ export class CloudflareSyncClient {
   }
 
   /**
-   * Pull remote wallet state from Cloudflare Worker
+   * Pull remote wallet state from Cloudflare Worker or Pages Function
    */
   static async pullFromCloud(
     workerUrl: string,
     secretKey: string
   ): Promise<CloudflareSyncResult> {
     try {
-      const cleanUrl = workerUrl.replace(/\/+$/, '');
-      const response = await fetch(`${cleanUrl}/api/sync`, {
+      const baseUrl = this.resolveBaseUrl(workerUrl);
+      const targetUrl = `${baseUrl}/api/sync`;
+
+      const response = await fetch(targetUrl, {
         method: 'GET',
         headers: {
           'x-sync-key': secretKey,
         },
       });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return {
+          success: false,
+          message: `Endpoint returned HTML instead of JSON. Ensure the 'functions/' folder is committed to GitHub and deployed on Cloudflare Pages.`,
+        };
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -132,13 +174,13 @@ export class CloudflareSyncClient {
       if (!json.data || !Array.isArray(json.data.accounts) || !Array.isArray(json.data.transactions)) {
         return {
           success: false,
-          message: 'Cloudflare Worker returned invalid backup data structure.',
+          message: json.message || 'No existing cloud backup found. Click "Push to Cloud" first to create one!',
         };
       }
 
       return {
         success: true,
-        message: `Successfully retrieved ${json.data.transactions.length} transactions from Cloudflare.`,
+        message: `Successfully retrieved ${json.data.transactions.length} transactions from Cloudflare!`,
         data: {
           accounts: json.data.accounts,
           transactions: json.data.transactions,
