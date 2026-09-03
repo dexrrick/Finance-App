@@ -1,0 +1,10 @@
+name = "antigravity-finance-sync"
+main = "index.ts"
+compatibility_date = "2024-09-01"
+
+# To enable Cloudflare KV persistence:
+# 1. Run: npx wrangler kv:namespace create WALLET_KV
+# 2. Paste the returned ID below:
+# [[kv_namespaces]]
+# binding = "WALLET_KV"
+# id = "YOUR_KV_NAMESPACE_ID"
