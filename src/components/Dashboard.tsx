@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -118,44 +118,54 @@ export const Dashboard: React.FC<DashboardProps> = ({
     onUpdateSettings?.({ ...settings, dashboardCards: DEFAULT_DASHBOARD_CARDS });
   };
 
-  // Drag and drop state for Customize Cards modal
-  const [draggedCardIndex, setDraggedCardIndex] = useState<number | null>(null);
-  const [dragOverCardIndex, setDragOverCardIndex] = useState<number | null>(null);
+  // Touch & Pointer live reorder state for Customize Cards modal
+  const [activeDragCardIndex, setActiveDragCardIndex] = useState<number | null>(null);
+  const cardListRef = useRef<HTMLDivElement>(null);
 
-  const handleCardDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedCardIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', index.toString());
-  };
+  const handleCardPointerDown = (index: number, e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if ((e.target as HTMLElement).closest('button')) return;
 
-  const handleCardDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragOverCardIndex !== index) {
-      setDragOverCardIndex(index);
+    setActiveDragCardIndex(index);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // safe fallback
     }
   };
 
-  const handleCardDrop = (e: React.DragEvent, targetIndex: number) => {
+  const handleCardPointerMove = (e: React.PointerEvent) => {
+    if (activeDragCardIndex === null || !cardListRef.current) return;
     e.preventDefault();
-    if (draggedCardIndex === null || draggedCardIndex === targetIndex) {
-      setDraggedCardIndex(null);
-      setDragOverCardIndex(null);
-      return;
+
+    const rows = Array.from(
+      cardListRef.current.querySelectorAll<HTMLElement>('[data-card-index]')
+    );
+    for (let i = 0; i < rows.length; i++) {
+      const rect = rows[i].getBoundingClientRect();
+      if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        if (i !== activeDragCardIndex) {
+          const updated = [...cardsConfig];
+          const [moved] = updated.splice(activeDragCardIndex, 1);
+          updated.splice(i, 0, moved);
+
+          onUpdateSettings?.({ ...settings, dashboardCards: updated });
+          setActiveDragCardIndex(i);
+        }
+        break;
+      }
     }
-
-    const updated = [...cardsConfig];
-    const [moved] = updated.splice(draggedCardIndex, 1);
-    updated.splice(targetIndex, 0, moved);
-
-    onUpdateSettings?.({ ...settings, dashboardCards: updated });
-    setDraggedCardIndex(null);
-    setDragOverCardIndex(null);
   };
 
-  const handleCardDragEnd = () => {
-    setDraggedCardIndex(null);
-    setDragOverCardIndex(null);
+  const handleCardPointerUp = (e: React.PointerEvent) => {
+    if (activeDragCardIndex !== null) {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        // safe fallback
+      }
+      setActiveDragCardIndex(null);
+    }
   };
 
   // Helper render functions
@@ -536,39 +546,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </button>
             </div>
 
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div ref={cardListRef} className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
               {cardsConfig.map((card, idx) => (
                 <div
                   key={card.id}
-                  draggable
-                  onDragStart={(e) => handleCardDragStart(e, idx)}
-                  onDragOver={(e) => handleCardDragOver(e, idx)}
-                  onDrop={(e) => handleCardDrop(e, idx)}
-                  onDragEnd={handleCardDragEnd}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-all cursor-grab active:cursor-grabbing select-none ${
-                    draggedCardIndex === idx ? 'opacity-30 border-dashed border-indigo-400 scale-[0.98]' : ''
-                  } ${
-                    dragOverCardIndex === idx ? 'ring-2 ring-indigo-500 bg-indigo-950/40 border-indigo-500' : ''
+                  data-card-index={idx}
+                  onPointerDown={(e) => handleCardPointerDown(idx, e)}
+                  onPointerMove={handleCardPointerMove}
+                  onPointerUp={handleCardPointerUp}
+                  onPointerCancel={handleCardPointerUp}
+                  style={{ touchAction: 'none' }}
+                  className={`flex items-center justify-between p-2.5 rounded-xl border text-xs select-none transition-all duration-150 ${
+                    activeDragCardIndex === idx
+                      ? 'scale-[1.03] shadow-2xl z-30 ring-2 ring-indigo-500 bg-slate-800 border-indigo-400 cursor-grabbing'
+                      : 'cursor-grab hover:border-slate-600'
                   } ${
                     card.enabled
                       ? 'bg-slate-800/80 border-slate-700 text-slate-200'
                       : 'opacity-50 bg-slate-950/40 border-slate-800 text-slate-500'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500 hover:text-slate-300 cursor-grab p-0.5" title="Drag to reorder">
-                      <GripVertical className="w-4 h-4" />
+                  <div className="flex items-center gap-2 pointer-events-none">
+                    <span className="text-slate-500 hover:text-slate-300 p-0.5" title="Hold and drag to reorder">
+                      <GripVertical className="w-4 h-4 text-indigo-400" />
                     </span>
                     <span className="w-4 font-mono text-[10px] text-slate-500">#{idx + 1}</span>
                     <span className="font-medium">{card.label}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 pointer-events-auto">
                     <button
                       disabled={idx === 0}
                       onClick={() => handleMoveCardUp(idx)}
                       title="Move Up"
-                      className="p-1 rounded bg-slate-700/50 hover:bg-slate-700 text-slate-300 disabled:opacity-30"
+                      className="p-1 rounded bg-slate-700/50 hover:bg-slate-700 text-slate-300 disabled:opacity-30 active:scale-95"
                     >
                       <ChevronUp className="w-3.5 h-3.5" />
                     </button>
@@ -576,13 +587,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       disabled={idx === cardsConfig.length - 1}
                       onClick={() => handleMoveCardDown(idx)}
                       title="Move Down"
-                      className="p-1 rounded bg-slate-700/50 hover:bg-slate-700 text-slate-300 disabled:opacity-30"
+                      className="p-1 rounded bg-slate-700/50 hover:bg-slate-700 text-slate-300 disabled:opacity-30 active:scale-95"
                     >
                       <ChevronDown className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleToggleCard(card.id)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors active:scale-95 ${
                         card.enabled
                           ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
                           : 'bg-slate-800 text-slate-400 hover:bg-slate-700'

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, ArrowDownLeft, ArrowUpRight, RefreshCw, BookOpen, X } from 'lucide-react';
 import { TabPositionPreference } from '../core/types';
 
@@ -13,8 +13,13 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Position above the bottom bar or near bottom right if bar is at top
-  const bottomClass = tabPosition === 'bottom' ? 'bottom-20' : 'bottom-6';
+  // Position safely above the bottom tab bar + iOS home indicator safe area
+  const containerStyle = {
+    bottom:
+      tabPosition === 'bottom'
+        ? 'calc(5.25rem + env(safe-area-inset-bottom, 0px))'
+        : 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+  };
 
   const handleSelect = (mode: 'expense' | 'income' | 'transfer' | 'journal') => {
     setIsOpen(false);
@@ -22,7 +27,11 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
   };
 
   return (
-    <div className={`fixed right-4 ${bottomClass} z-50 flex flex-col items-end`}>
+    <div
+      style={containerStyle}
+      className="fixed right-4 z-50 flex flex-col items-end pointer-events-none"
+    >
+      <div className="pointer-events-auto flex flex-col items-end">
       {/* Expanded Quick Action Popover */}
       {isOpen && (
         <div className="mb-3 flex flex-col items-end gap-2 animate-fade-in">
@@ -86,6 +95,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
       >
         {isOpen ? <X className="w-6 h-6 text-slate-300" /> : <Plus className="w-7 h-7 stroke-[2.5]" />}
       </button>
+      </div>
     </div>
   );
 };

@@ -252,7 +252,10 @@ export function App() {
 
   const isLight = settings.theme === 'light';
   const tabPosition = settings.tabPosition || 'bottom';
-  const mainPadding = tabPosition === 'bottom' ? 'pt-3 pb-28' : 'pt-2 pb-12';
+  const mainPadding =
+    tabPosition === 'bottom'
+      ? 'pt-3 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]'
+      : 'pt-2 pb-12';
 
   return (
     <div

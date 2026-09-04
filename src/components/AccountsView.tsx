@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Landmark,
   Plus,
@@ -60,9 +60,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
   const columnConfigs: AccountColumnConfig[] = settings.accountColumns || DEFAULT_ACCOUNT_COLUMNS;
   const activeColumns = columnConfigs.filter((c) => c.enabled);
 
-  // Drag & drop state for Customize Columns modal
-  const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
-  const [dragOverColumnIndex, setDragOverColumnIndex] = useState<number | null>(null);
+  // Touch & Pointer live reorder state for Customize Columns modal
+  const [activeDragColumnIndex, setActiveDragColumnIndex] = useState<number | null>(null);
+  const columnListRef = useRef<HTMLDivElement>(null);
 
   // Account Form Modal state (for Create & Edit)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -140,47 +140,51 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
     });
   };
 
-  // Drag & Drop handlers for Customize Columns
-  const handleColumnDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedColumnIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', index.toString());
+  // Touch & Pointer live reorder handlers for Customize Columns
+  const handleColumnPointerDown = (index: number, e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if ((e.target as HTMLElement).closest('button')) return;
+
+    setActiveDragColumnIndex(index);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // safe fallback
+    }
   };
 
-  const handleColumnDragOver = (e: React.DragEvent, index: number) => {
+  const handleColumnPointerMove = (e: React.PointerEvent) => {
+    if (activeDragColumnIndex === null || !columnListRef.current) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragOverColumnIndex !== index) {
-      setDragOverColumnIndex(index);
+
+    const rows = Array.from(
+      columnListRef.current.querySelectorAll<HTMLElement>('[data-col-index]')
+    );
+    for (let i = 0; i < rows.length; i++) {
+      const rect = rows[i].getBoundingClientRect();
+      if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        if (i !== activeDragColumnIndex) {
+          const updated = [...columnConfigs];
+          const [moved] = updated.splice(activeDragColumnIndex, 1);
+          updated.splice(i, 0, moved);
+
+          onUpdateSettings?.({ ...settings, accountColumns: updated });
+          setActiveDragColumnIndex(i);
+        }
+        break;
+      }
     }
   };
 
-  const handleColumnDrop = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    if (draggedColumnIndex === null || draggedColumnIndex === targetIndex) {
-      setDraggedColumnIndex(null);
-      setDragOverColumnIndex(null);
-      return;
+  const handleColumnPointerUp = (e: React.PointerEvent) => {
+    if (activeDragColumnIndex !== null) {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        // safe fallback
+      }
+      setActiveDragColumnIndex(null);
     }
-
-    const updated = [...columnConfigs];
-    const [moved] = updated.splice(draggedColumnIndex, 1);
-    updated.splice(targetIndex, 0, moved);
-
-    if (onUpdateSettings) {
-      onUpdateSettings({
-        ...settings,
-        accountColumns: updated,
-      });
-    }
-
-    setDraggedColumnIndex(null);
-    setDragOverColumnIndex(null);
-  };
-
-  const handleColumnDragEnd = () => {
-    setDraggedColumnIndex(null);
-    setDragOverColumnIndex(null);
   };
 
   const handleResetColumns = () => {
@@ -391,17 +395,32 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       {/* Accounts Table */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className={`w-full text-left text-xs ${activeColumns.length <= 3 ? 'table-fixed' : ''}`}>
             <thead>
               <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-semibold uppercase tracking-wider">
-                {activeColumns.map((col) => (
-                  <th
-                    key={col.id}
-                    className={`py-3 px-4 ${col.id === 'balance' ? 'text-right' : 'text-left'}`}
-                  >
-                    {col.label}
-                  </th>
-                ))}
+                {activeColumns.map((col) => {
+                  const isCompact = activeColumns.length <= 3;
+                  const widthClass = isCompact
+                    ? col.id === 'name'
+                      ? 'w-[44%] sm:w-[46%]'
+                      : col.id === 'category'
+                      ? 'w-[28%] sm:w-[26%]'
+                      : col.id === 'balance'
+                      ? 'w-[28%] sm:w-[28%]'
+                      : ''
+                    : '';
+
+                  return (
+                    <th
+                      key={col.id}
+                      className={`py-3 px-2 sm:px-4 ${
+                        col.id === 'balance' ? 'text-right' : 'text-left'
+                      } ${widthClass}`}
+                    >
+                      {col.label}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -423,20 +442,20 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                       switch (col.id) {
                         case 'code':
                           return (
-                            <td key={col.id} className="py-3 px-4 font-mono font-bold text-indigo-300">
+                            <td key={col.id} className="py-2.5 px-2 sm:px-4 font-mono font-bold text-indigo-300 truncate">
                               {acc.code}
                             </td>
                           );
                         case 'name':
                           return (
-                            <td key={col.id} className="py-3 px-4">
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-slate-200">{acc.name}</span>
+                            <td key={col.id} className="py-2.5 px-2 sm:px-4 truncate">
+                              <div className="flex items-center justify-between gap-1.5 min-w-0">
+                                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                  <span className="font-semibold text-slate-200 truncate">{acc.name}</span>
                                   {acc.isSystem && (
                                     <span
                                       title="System Account"
-                                      className="inline-flex items-center text-[10px] text-slate-500"
+                                      className="inline-flex items-center text-[10px] text-slate-500 shrink-0"
                                     >
                                       <Shield className="w-3 h-3" />
                                     </span>
@@ -448,7 +467,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                                     e.stopPropagation();
                                     handleOpenEditModal(acc);
                                   }}
-                                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-opacity"
+                                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-opacity shrink-0"
                                   title="Edit Account Details"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
@@ -458,18 +477,20 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                           );
                         case 'category':
                           return (
-                            <td key={col.id} className="py-3 px-4">
-                              <div className="flex items-center gap-1.5">
-                                {getCategoryIcon(acc.category)}
-                                <span className="font-medium text-slate-300">{acc.category}</span>
+                            <td key={col.id} className="py-2.5 px-2 sm:px-4 truncate">
+                              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                <span className="shrink-0">{getCategoryIcon(acc.category)}</span>
+                                <span className="font-medium text-slate-300 truncate text-[11px] sm:text-xs">
+                                  {acc.category.replace(/_/g, ' ')}
+                                </span>
                               </div>
                             </td>
                           );
                         case 'normalBalance':
                           return (
-                            <td key={col.id} className="py-3 px-4">
+                            <td key={col.id} className="py-2.5 px-2 sm:px-4">
                               <span
-                                className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                   acc.normalBalance === 'DEBIT'
                                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                                     : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
@@ -481,13 +502,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                           );
                         case 'subcategory':
                           return (
-                            <td key={col.id} className="py-3 px-4 text-slate-400">
+                            <td key={col.id} className="py-2.5 px-2 sm:px-4 text-slate-400 truncate">
                               {acc.subcategory || '—'}
                             </td>
                           );
                         case 'balance':
                           return (
-                            <td key={col.id} className="py-3 px-4 text-right font-mono font-bold text-sm text-slate-100">
+                            <td key={col.id} className="py-2.5 px-2 sm:px-4 text-right font-mono font-bold text-xs sm:text-sm text-slate-100 whitespace-nowrap">
                               {formatCurrency(balanceVal, currency)}
                             </td>
                           );
@@ -667,33 +688,34 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               </button>
             </div>
 
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            <div ref={columnListRef} className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
               {columnConfigs.map((col, idx) => (
                 <div
                   key={col.id}
-                  draggable
-                  onDragStart={(e) => handleColumnDragStart(e, idx)}
-                  onDragOver={(e) => handleColumnDragOver(e, idx)}
-                  onDrop={(e) => handleColumnDrop(e, idx)}
-                  onDragEnd={handleColumnDragEnd}
-                  className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-grab active:cursor-grabbing select-none ${
-                    draggedColumnIndex === idx ? 'opacity-30 border-dashed border-indigo-400 scale-[0.98]' : ''
-                  } ${
-                    dragOverColumnIndex === idx ? 'ring-2 ring-indigo-500 bg-indigo-950/40 border-indigo-500' : ''
+                  data-col-index={idx}
+                  onPointerDown={(e) => handleColumnPointerDown(idx, e)}
+                  onPointerMove={handleColumnPointerMove}
+                  onPointerUp={handleColumnPointerUp}
+                  onPointerCancel={handleColumnPointerUp}
+                  style={{ touchAction: 'none' }}
+                  className={`flex items-center justify-between p-3 rounded-xl border select-none transition-all duration-150 ${
+                    activeDragColumnIndex === idx
+                      ? 'scale-[1.03] shadow-2xl z-30 ring-2 ring-indigo-500 bg-slate-900 border-indigo-400 cursor-grabbing'
+                      : 'cursor-grab hover:border-slate-700'
                   } ${
                     col.enabled
                       ? 'bg-slate-950 border-slate-700/80 text-white'
                       : 'bg-slate-950/40 border-slate-800/50 text-slate-500'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-slate-500 hover:text-slate-300 cursor-grab p-0.5" title="Drag to reorder">
-                      <GripVertical className="w-4 h-4" />
+                  <div className="flex items-center gap-2.5 pointer-events-none">
+                    <span className="text-slate-500 hover:text-slate-300 p-0.5" title="Hold and drag to reorder">
+                      <GripVertical className="w-4 h-4 text-indigo-400" />
                     </span>
                     <button
                       type="button"
                       onClick={() => handleToggleColumn(col.id)}
-                      className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
+                      className={`pointer-events-auto w-5 h-5 rounded-md flex items-center justify-center border transition-colors active:scale-90 ${
                         col.enabled
                           ? 'bg-indigo-600 border-indigo-500 text-white'
                           : 'border-slate-700 bg-slate-900'
@@ -704,12 +726,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                     <span className="text-xs font-semibold">{col.label}</span>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 pointer-events-auto">
                     <button
                       type="button"
                       disabled={idx === 0}
                       onClick={() => handleMoveColumn(idx, 'up')}
-                      className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent"
+                      className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent active:scale-95"
                       title="Move left/up"
                     >
                       <ArrowUp className="w-3.5 h-3.5" />
@@ -718,7 +740,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                       type="button"
                       disabled={idx === columnConfigs.length - 1}
                       onClick={() => handleMoveColumn(idx, 'down')}
-                      className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent"
+                      className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent active:scale-95"
                       title="Move right/down"
                     >
                       <ArrowDown className="w-3.5 h-3.5" />
