@@ -143,7 +143,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     );
     for (let i = 0; i < rows.length; i++) {
       const rect = rows[i].getBoundingClientRect();
-      if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+      const buffer = rect.height * 0.3;
+      if (e.clientY >= rect.top + (i < activeDragCardIndex ? buffer : 0) && e.clientY <= rect.bottom - (i > activeDragCardIndex ? buffer : 0)) {
         if (i !== activeDragCardIndex) {
           const updated = [...cardsConfig];
           const [moved] = updated.splice(activeDragCardIndex, 1);
@@ -170,27 +171,48 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Helper render functions
   const renderEquationStatus = () => (
-    <div key="equation_status" className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+    <div
+      key="equation_status"
+      className={`border rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm transition-all ${
+        isLight
+          ? 'bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/80 border-indigo-100 text-slate-900'
+          : 'bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border-slate-800 text-white shadow-xl'
+      }`}
+    >
       <div className="flex items-center gap-3.5">
-        <div className="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+        <div
+          className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
+            isLight
+              ? 'bg-indigo-100/70 border-indigo-200 text-indigo-600'
+              : 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
+          }`}
+        >
           <Scale className="w-5 h-5" />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+            <h2 className={`text-sm sm:text-base font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
               Accounting Equation Status
             </h2>
             {balanceSheet.isBalanced ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                isLight
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+              }`}>
                 <CheckCircle2 className="w-3 h-3" /> Balanced
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                isLight
+                  ? 'bg-rose-100 text-rose-800 border-rose-200'
+                  : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+              }`}>
                 <AlertCircle className="w-3 h-3" /> Discrepancy
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-300 mt-0.5">
+          <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
             Assets ({formatCurrency(balanceSheet.totalAssets, currency)}) = Liabilities (
             {formatCurrency(balanceSheet.totalLiabilities, currency)}) + Equity & Net Income (
             {formatCurrency(balanceSheet.totalEquity + balanceSheet.netIncome, currency)})
@@ -274,38 +296,61 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 
   const renderQuickActions = () => (
-    <div key="quick_actions" className="bg-slate-900/70 border border-slate-800/80 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2.5">
-      <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+    <div
+      key="quick_actions"
+      className={`border rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2.5 transition-all ${
+        isLight
+          ? 'bg-white border-slate-200 text-slate-800 shadow-sm'
+          : 'bg-slate-900/70 border-slate-800/80 text-slate-200'
+      }`}
+    >
+      <span className={`text-xs font-semibold flex items-center gap-1.5 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
         Quick Actions:
       </span>
       <div className="flex flex-wrap items-center gap-1.5">
         <button
           onClick={() => onOpenTransactionModal('expense')}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/30 text-rose-300 text-xs font-medium transition-all"
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+            isLight
+              ? 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
+              : 'bg-rose-950/40 hover:bg-rose-900/50 border-rose-500/30 text-rose-300'
+          }`}
         >
-          <ArrowDownLeft className="w-3 h-3 text-rose-400" />
+          <ArrowDownLeft className="w-3 h-3 text-rose-500" />
           Expense
         </button>
         <button
           onClick={() => onOpenTransactionModal('income')}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 text-emerald-300 text-xs font-medium transition-all"
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+            isLight
+              ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700'
+              : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/30 text-emerald-300'
+          }`}
         >
-          <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+          <ArrowUpRight className="w-3 h-3 text-emerald-500" />
           Income
         </button>
         <button
           onClick={() => onOpenTransactionModal('transfer')}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-950/40 hover:bg-sky-900/50 border border-sky-500/30 text-sky-300 text-xs font-medium transition-all"
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+            isLight
+              ? 'bg-sky-50 hover:bg-sky-100 border-sky-200 text-sky-700'
+              : 'bg-sky-950/40 hover:bg-sky-900/50 border-sky-500/30 text-sky-300'
+          }`}
         >
-          <RefreshCw className="w-3 h-3 text-sky-400" />
+          <RefreshCw className="w-3 h-3 text-sky-500" />
           Transfer
         </button>
         <button
           onClick={() => onOpenTransactionModal('journal')}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-medium transition-all"
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+            isLight
+              ? 'bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700'
+              : 'bg-purple-950/40 hover:bg-purple-900/50 border-purple-500/30 text-purple-300'
+          }`}
         >
-          <BookOpen className="w-3 h-3 text-purple-400" />
+          <BookOpen className="w-3 h-3 text-purple-500" />
           Journal
         </button>
       </div>

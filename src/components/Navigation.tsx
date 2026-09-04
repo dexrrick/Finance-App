@@ -60,16 +60,20 @@ export const Navigation: React.FC<NavigationProps> = ({
   const positionClasses =
     tabPosition === 'top'
       ? 'sticky top-0 z-40 border-b pt-[env(safe-area-inset-top,0px)] shadow-md'
-      : 'fixed bottom-0 left-0 right-0 z-40 border-t pb-[calc(0.4rem+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_30px_rgba(0,0,0,0.35)]';
+      : 'fixed bottom-0 left-0 right-0 z-40 border-t pb-[calc(0.4rem+env(safe-area-inset-bottom,0px))]';
 
   // iOS Liquid Glass styling
   const glassClasses = isLight
-    ? 'bg-white/70 border-black/[0.06] text-slate-800 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/60 before:via-black/15'
-    : 'bg-[#080c14]/70 border-white/[0.08] text-slate-100 backdrop-blur-2xl supports-[backdrop-filter]:bg-[#080c14]/65 before:via-white/20';
+    ? 'bg-white/80 border-slate-200/80 text-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]'
+    : 'bg-[#080c14]/75 border-white/[0.12] text-slate-100 shadow-[0_-10px_35px_rgba(0,0,0,0.6)]';
 
   return (
     <nav
-      className={`${positionClasses} ${glassClasses} relative transition-all duration-300 before:absolute before:inset-x-0 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:to-transparent`}
+      style={{
+        WebkitBackdropFilter: 'blur(24px) saturate(190%)',
+        backdropFilter: 'blur(24px) saturate(190%)',
+      }}
+      className={`${positionClasses} ${glassClasses} transition-all duration-300`}
     >
       <div className="max-w-xl mx-auto px-2 pt-1.5 pb-0.5">
         <div

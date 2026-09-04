@@ -319,6 +319,7 @@ export function App() {
             onAddAccount={handleAddAccount}
             onUpdateAccount={handleUpdateAccount}
             onUpdateSettings={setSettings}
+            onEditTransaction={handleSelectTransactionToEdit}
           />
         )}
 
@@ -348,6 +349,7 @@ export function App() {
       <FloatingRecordButton
         onOpenModal={handleOpenTransactionModal}
         tabPosition={tabPosition}
+        theme={settings.theme}
       />
 
       {/* If Tab Position is configured as Bottom (default), render here */}

@@ -41,6 +41,7 @@ interface AccountsViewProps {
   onAddAccount: (acc: Account) => void;
   onUpdateAccount?: (acc: Account) => void;
   onUpdateSettings?: (settings: AppSettings) => void;
+  onEditTransaction?: (tx: Transaction) => void;
 }
 
 export const AccountsView: React.FC<AccountsViewProps> = ({
@@ -50,6 +51,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
   onAddAccount,
   onUpdateAccount,
   onUpdateSettings,
+  onEditTransaction,
 }) => {
   const currency = settings.currencySymbol || '$';
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -162,7 +164,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
     );
     for (let i = 0; i < rows.length; i++) {
       const rect = rows[i].getBoundingClientRect();
-      if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+      // 30% threshold buffer eliminates boundary jitter
+      const buffer = rect.height * 0.3;
+      if (e.clientY >= rect.top + (i < activeDragColumnIndex ? buffer : 0) && e.clientY <= rect.bottom - (i > activeDragColumnIndex ? buffer : 0)) {
         if (i !== activeDragColumnIndex) {
           const updated = [...columnConfigs];
           const [moved] = updated.splice(activeDragColumnIndex, 1);
@@ -526,7 +530,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
       {/* Account Form Modal (Create & Edit) */}
       {isFormModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
@@ -805,15 +809,6 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
               <div className="flex items-center gap-2">
                 <button
-                  type="button"
-                  onClick={() => handleOpenEditModal(selectedAccountForDrilldown)}
-                  className="px-2.5 py-1 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/30 rounded-lg transition-colors flex items-center gap-1.5"
-                  title="Edit Account Details"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span>Edit</span>
-                </button>
-                <button
                   onClick={() => setSelectedAccountForDrilldown(null)}
                   className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
                 >
@@ -878,7 +873,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                     return (
                       <div
                         key={tx.id}
-                        className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl hover:border-slate-700 transition-all space-y-1.5"
+                        onClick={() => onEditTransaction?.(tx)}
+                        className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl hover:border-indigo-500/50 hover:bg-slate-900/90 active:scale-[0.99] transition-all space-y-1.5 cursor-pointer group"
+                        title="Click to edit or amend this transaction"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-mono text-slate-400">{tx.date}</span>
@@ -899,9 +896,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                         </div>
 
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-semibold text-slate-200 truncate">{tx.description}</span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-semibold text-slate-200 truncate group-hover:text-indigo-300 transition-colors">
+                              {tx.description}
+                            </span>
+                            <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                          </div>
                           {tx.meta?.currency && tx.meta.currency !== (settings.baseCurrency || 'USD') && (
-                            <span className="text-[10px] font-mono text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                            <span className="text-[10px] font-mono text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-500/20 shrink-0">
                               {tx.meta.currency} {tx.meta.originalAmount?.toFixed(2)}
                             </span>
                           )}

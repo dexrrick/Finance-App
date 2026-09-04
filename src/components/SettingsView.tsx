@@ -288,8 +288,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             Customize navigation, backups, display & account
           </p>
         </div>
-        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
-          Android Edition
+        <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded border bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
+          v1.0.0
         </span>
       </div>
 
@@ -972,7 +972,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           )}
         </div>
         <p className="text-[11px] text-slate-500">
-          Finance Ledger • Native Android Edition v1.0.0 • Offline First
+          Finance Ledger • v1.0.0 • Multi-Platform Offline First
         </p>
       </div>
     </div>

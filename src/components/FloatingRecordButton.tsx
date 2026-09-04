@@ -5,13 +5,16 @@ import { TabPositionPreference } from '../core/types';
 interface FloatingRecordButtonProps {
   onOpenModal: (mode: 'expense' | 'income' | 'transfer' | 'journal') => void;
   tabPosition?: TabPositionPreference;
+  theme?: 'dark' | 'light';
 }
 
 export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
   onOpenModal,
   tabPosition = 'bottom',
+  theme = 'dark',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const isLight = theme === 'light';
 
   // Position safely above the bottom tab bar + iOS home indicator safe area
   const containerStyle = {
@@ -25,6 +28,12 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
     setIsOpen(false);
     onOpenModal(mode);
   };
+
+  const popoverButtonClass = `flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border shadow-xl text-xs font-semibold backdrop-blur-md transition-all active:scale-95 ${
+    isLight
+      ? 'bg-white/95 hover:bg-slate-50 text-slate-800 border-slate-200 shadow-slate-200/50'
+      : 'bg-slate-800/95 hover:bg-slate-700 text-slate-100 border-slate-700'
+  }`;
 
   return (
     <div
@@ -43,7 +52,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
 
           <button
             onClick={() => handleSelect('journal')}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-slate-800/95 hover:bg-slate-700 text-slate-100 border border-slate-700 shadow-xl text-xs font-semibold backdrop-blur-md transition-all active:scale-95"
+            className={popoverButtonClass}
           >
             <span>Journal Entry (Dr / Cr)</span>
             <div className="w-7 h-7 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
@@ -53,7 +62,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
 
           <button
             onClick={() => handleSelect('transfer')}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-slate-800/95 hover:bg-slate-700 text-slate-100 border border-slate-700 shadow-xl text-xs font-semibold backdrop-blur-md transition-all active:scale-95"
+            className={popoverButtonClass}
           >
             <span>Transfer Funds</span>
             <div className="w-7 h-7 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center">
@@ -63,7 +72,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
 
           <button
             onClick={() => handleSelect('income')}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-slate-800/95 hover:bg-slate-700 text-slate-100 border border-slate-700 shadow-xl text-xs font-semibold backdrop-blur-md transition-all active:scale-95"
+            className={popoverButtonClass}
           >
             <span>Record Income</span>
             <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
@@ -73,7 +82,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
 
           <button
             onClick={() => handleSelect('expense')}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-slate-800/95 hover:bg-slate-700 text-slate-100 border border-slate-700 shadow-xl text-xs font-semibold backdrop-blur-md transition-all active:scale-95"
+            className={popoverButtonClass}
           >
             <span>Record Expense</span>
             <div className="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
