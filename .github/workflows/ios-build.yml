@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -43,8 +43,10 @@ jobs:
 
       - name: Package Unsigned IPA
         run: |
+          APP_PATH=$(find build -name "App.app" -type d | head -n 1)
+          echo "Found app at: $APP_PATH"
           mkdir -p Payload
-          cp -r build/Release-iphoneos/App.app Payload/
+          cp -r "$APP_PATH" Payload/
           zip -r App-unsigned.ipa Payload
           echo "Created App-unsigned.ipa successfully"
 
