@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -19,7 +19,8 @@ import {
   EyeOff,
   ChevronUp,
   ChevronDown,
-  RotateCcw
+  RotateCcw,
+  GripVertical,
 } from 'lucide-react';
 import { Account, AppSettings, DashboardCardConfig, DashboardCardId, Transaction } from '../core/types';
 import {
@@ -115,6 +116,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleResetCards = () => {
     onUpdateSettings?.({ ...settings, dashboardCards: DEFAULT_DASHBOARD_CARDS });
+  };
+
+  // Drag and drop state for Customize Cards modal
+  const [draggedCardIndex, setDraggedCardIndex] = useState<number | null>(null);
+  const [dragOverCardIndex, setDragOverCardIndex] = useState<number | null>(null);
+
+  const handleCardDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedCardIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleCardDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverCardIndex !== index) {
+      setDragOverCardIndex(index);
+    }
+  };
+
+  const handleCardDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedCardIndex === null || draggedCardIndex === targetIndex) {
+      setDraggedCardIndex(null);
+      setDragOverCardIndex(null);
+      return;
+    }
+
+    const updated = [...cardsConfig];
+    const [moved] = updated.splice(draggedCardIndex, 1);
+    updated.splice(targetIndex, 0, moved);
+
+    onUpdateSettings?.({ ...settings, dashboardCards: updated });
+    setDraggedCardIndex(null);
+    setDragOverCardIndex(null);
+  };
+
+  const handleCardDragEnd = () => {
+    setDraggedCardIndex(null);
+    setDragOverCardIndex(null);
   };
 
   // Helper render functions
@@ -485,7 +526,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div>
                 <h3 className="font-bold text-white text-base">Customize Display Cards</h3>
-                <p className="text-xs text-slate-400">Show, hide, and reorder cards on your Home screen</p>
+                <p className="text-xs text-slate-400">Drag items to reorder, or toggle cards on your Home screen</p>
               </div>
               <button
                 onClick={() => setIsCustomizeModalOpen(false)}
@@ -499,13 +540,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {cardsConfig.map((card, idx) => (
                 <div
                   key={card.id}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-colors ${
+                  draggable
+                  onDragStart={(e) => handleCardDragStart(e, idx)}
+                  onDragOver={(e) => handleCardDragOver(e, idx)}
+                  onDrop={(e) => handleCardDrop(e, idx)}
+                  onDragEnd={handleCardDragEnd}
+                  className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-all cursor-grab active:cursor-grabbing select-none ${
+                    draggedCardIndex === idx ? 'opacity-30 border-dashed border-indigo-400 scale-[0.98]' : ''
+                  } ${
+                    dragOverCardIndex === idx ? 'ring-2 ring-indigo-500 bg-indigo-950/40 border-indigo-500' : ''
+                  } ${
                     card.enabled
                       ? 'bg-slate-800/80 border-slate-700 text-slate-200'
                       : 'opacity-50 bg-slate-950/40 border-slate-800 text-slate-500'
                   }`}
                 >
                   <div className="flex items-center gap-2">
+                    <span className="text-slate-500 hover:text-slate-300 cursor-grab p-0.5" title="Drag to reorder">
+                      <GripVertical className="w-4 h-4" />
+                    </span>
                     <span className="w-4 font-mono text-[10px] text-slate-500">#{idx + 1}</span>
                     <span className="font-medium">{card.label}</span>
                   </div>

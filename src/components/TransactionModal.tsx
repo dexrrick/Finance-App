@@ -66,11 +66,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     { id: 'leg-2', accountId: '', type: 'CREDIT', amount: 0, memo: '' },
   ]);
 
-  // Account groupings
   const assetAccounts = accounts.filter((a) => a.category === 'ASSET' && a.isActive);
   const liabilityAccounts = accounts.filter((a) => a.category === 'LIABILITY' && a.isActive);
   const revenueAccounts = accounts.filter((a) => a.category === 'REVENUE' && a.isActive);
   const expenseAccounts = accounts.filter((a) => a.category === 'EXPENSE' && a.isActive);
+  const otherIncomeAccounts = accounts.filter((a) => a.category === 'OTHER_INCOME' && a.isActive);
+  const otherExpenseAccounts = accounts.filter((a) => a.category === 'OTHER_EXPENSE' && a.isActive);
   const equityAccounts = accounts.filter((a) => a.category === 'EQUITY' && a.isActive);
 
   // Payment account candidates (Assets like Cash/Bank + Credit Cards)
@@ -591,11 +592,22 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         onChange={(e) => setCategoryAccountId(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 truncate"
                       >
-                        {expenseAccounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </option>
-                        ))}
+                        <optgroup label="Operating Expenses (5xxx)">
+                          {expenseAccounts.map((acc) => (
+                            <option key={acc.id} value={acc.id}>
+                              {acc.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                        {otherExpenseAccounts.length > 0 && (
+                          <optgroup label="Other Expenses (7xxx)">
+                            {otherExpenseAccounts.map((acc) => (
+                              <option key={acc.id} value={acc.id}>
+                                {acc.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
                       </select>
                     </div>
 
@@ -629,11 +641,22 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         onChange={(e) => setCategoryAccountId(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 truncate"
                       >
-                        {revenueAccounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </option>
-                        ))}
+                        <optgroup label="Operating Revenues (4xxx)">
+                          {revenueAccounts.map((acc) => (
+                            <option key={acc.id} value={acc.id}>
+                              {acc.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                        {otherIncomeAccounts.length > 0 && (
+                          <optgroup label="Other Income (6xxx)">
+                            {otherIncomeAccounts.map((acc) => (
+                              <option key={acc.id} value={acc.id}>
+                                {acc.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
                       </select>
                     </div>
 
@@ -914,6 +937,24 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                               </option>
                             ))}
                           </optgroup>
+                          {otherIncomeAccounts.length > 0 && (
+                            <optgroup label="Other Income (6000s)">
+                              {otherIncomeAccounts.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.code} - {a.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                          {otherExpenseAccounts.length > 0 && (
+                            <optgroup label="Other Expenses (7000s)">
+                              {otherExpenseAccounts.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.code} - {a.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
                         </select>
                       </div>
 

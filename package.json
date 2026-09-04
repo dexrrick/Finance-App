@@ -7,9 +7,22 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android",
+    "cap:open:ios": "npx cap open ios",
+    "cap:run": "npx cap run android",
+    "build:android": "npm run build && npx cap sync android",
+    "build:ios": "npm run build && npx cap sync ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/ios": "^8.5.1",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.40.0",
     "react": "^19.2.8",

@@ -230,6 +230,11 @@ export function App() {
     setAccounts([...accounts, newAcc]);
   };
 
+  // Update existing account in Chart of Accounts
+  const handleUpdateAccount = (updatedAcc: Account) => {
+    setAccounts(accounts.map((a) => (a.id === updatedAcc.id ? updatedAcc : a)));
+  };
+
   // Restore entire data from file or Google backup
   const handleRestoreData = (backup: AppDataBackup) => {
     setAccounts(backup.accounts);
@@ -309,6 +314,7 @@ export function App() {
             transactions={transactions}
             settings={settings}
             onAddAccount={handleAddAccount}
+            onUpdateAccount={handleUpdateAccount}
             onUpdateSettings={setSettings}
           />
         )}

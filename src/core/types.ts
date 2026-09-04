@@ -1,4 +1,11 @@
-export type AccountCategory = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+export type AccountCategory =
+  | 'ASSET'
+  | 'LIABILITY'
+  | 'EQUITY'
+  | 'REVENUE'
+  | 'EXPENSE'
+  | 'OTHER_INCOME'
+  | 'OTHER_EXPENSE';
 
 export type NormalBalance = 'DEBIT' | 'CREDIT';
 

@@ -330,9 +330,11 @@ export function generateBalanceSheet(
         totalEquity = round2(totalEquity + bal.balance);
         break;
       case 'REVENUE':
+      case 'OTHER_INCOME':
         totalRevenue = round2(totalRevenue + bal.balance);
         break;
       case 'EXPENSE':
+      case 'OTHER_EXPENSE':
         totalExpense = round2(totalExpense + bal.balance);
         break;
     }
@@ -376,10 +378,10 @@ export function generateIncomeStatement(
     const bal = balances.get(acc.id);
     if (!bal) continue;
 
-    if (acc.category === 'REVENUE') {
+    if (acc.category === 'REVENUE' || acc.category === 'OTHER_INCOME') {
       revenues.push(bal);
       totalRevenue = round2(totalRevenue + bal.balance);
-    } else if (acc.category === 'EXPENSE') {
+    } else if (acc.category === 'EXPENSE' || acc.category === 'OTHER_EXPENSE') {
       expenses.push(bal);
       totalExpense = round2(totalExpense + bal.balance);
     }

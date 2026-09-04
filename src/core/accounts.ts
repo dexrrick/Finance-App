@@ -4,12 +4,56 @@ export function getNormalBalance(category: AccountCategory): NormalBalance {
   switch (category) {
     case 'ASSET':
     case 'EXPENSE':
+    case 'OTHER_EXPENSE':
       return 'DEBIT';
     case 'LIABILITY':
     case 'EQUITY':
     case 'REVENUE':
+    case 'OTHER_INCOME':
       return 'CREDIT';
   }
+}
+
+export const CATEGORY_CODE_PREFIX: Record<AccountCategory, string> = {
+  ASSET: '1',
+  LIABILITY: '2',
+  EQUITY: '3',
+  REVENUE: '4',
+  EXPENSE: '5',
+  OTHER_INCOME: '6',
+  OTHER_EXPENSE: '7',
+};
+
+export const CATEGORY_LABELS: Record<AccountCategory, string> = {
+  ASSET: 'Asset',
+  LIABILITY: 'Liability',
+  EQUITY: 'Equity',
+  REVENUE: 'Revenue (Operating)',
+  EXPENSE: 'Expense (Operating)',
+  OTHER_INCOME: 'Other Income',
+  OTHER_EXPENSE: 'Other Expense',
+};
+
+export function isValidAccountCode(code: string, category: AccountCategory): boolean {
+  const prefix = CATEGORY_CODE_PREFIX[category];
+  return typeof code === 'string' && code.trim().startsWith(prefix);
+}
+
+export function getSuggestedNextAccountCode(category: AccountCategory, accounts: Account[]): string {
+  const prefix = CATEGORY_CODE_PREFIX[category];
+  const matchingCodes = accounts
+    .filter((a) => a.category === category && a.code && a.code.startsWith(prefix))
+    .map((a) => parseInt(a.code, 10))
+    .filter((n) => !isNaN(n));
+
+  if (matchingCodes.length === 0) {
+    return `${prefix}010`;
+  }
+
+  const maxCode = Math.max(...matchingCodes);
+  // Suggest next in increments of 10
+  const next = Math.floor(maxCode / 10) * 10 + 10;
+  return next.toString();
 }
 
 export const DEFAULT_ACCOUNTS: Account[] = [
@@ -152,30 +196,6 @@ export const DEFAULT_ACCOUNTS: Account[] = [
     isActive: true,
     icon: 'Laptop',
   },
-  {
-    id: 'acc-investment-income',
-    code: '4030',
-    name: 'Dividends & Interest',
-    category: 'REVENUE',
-    subcategory: 'Passive Income',
-    description: 'Interest from savings and dividend payouts',
-    normalBalance: 'CREDIT',
-    isSystem: false,
-    isActive: true,
-    icon: 'Coins',
-  },
-  {
-    id: 'acc-other-income',
-    code: '4990',
-    name: 'Other Income',
-    category: 'REVENUE',
-    subcategory: 'Miscellaneous',
-    description: 'Gifts, refunds, cashbacks, other revenue',
-    normalBalance: 'CREDIT',
-    isSystem: false,
-    isActive: true,
-    icon: 'Gift',
-  },
 
   // 5000s: EXPENSES (Debit normal)
   {
@@ -297,5 +317,57 @@ export const DEFAULT_ACCOUNTS: Account[] = [
     isSystem: true,
     isActive: true,
     icon: 'Layers',
+  },
+
+  // 6000s: OTHER INCOME (Credit normal - non-operating)
+  {
+    id: 'acc-investment-income',
+    code: '6010',
+    name: 'Dividends & Interest',
+    category: 'OTHER_INCOME',
+    subcategory: 'Passive Income',
+    description: 'Interest from savings, fixed deposits, and dividend payouts',
+    normalBalance: 'CREDIT',
+    isSystem: false,
+    isActive: true,
+    icon: 'Coins',
+  },
+  {
+    id: 'acc-other-income',
+    code: '6020',
+    name: 'Other Income',
+    category: 'OTHER_INCOME',
+    subcategory: 'Miscellaneous',
+    description: 'Gifts, refunds, cashbacks, FX gains, other non-operating revenue',
+    normalBalance: 'CREDIT',
+    isSystem: false,
+    isActive: true,
+    icon: 'Gift',
+  },
+
+  // 7000s: OTHER EXPENSES (Debit normal - non-operating)
+  {
+    id: 'acc-bank-fees',
+    code: '7010',
+    name: 'Bank Fees & Service Charges',
+    category: 'OTHER_EXPENSE',
+    subcategory: 'Banking & Finance',
+    description: 'Account maintenance fees, ATM charges, wire transfer fees',
+    normalBalance: 'DEBIT',
+    isSystem: false,
+    isActive: true,
+    icon: 'CreditCard',
+  },
+  {
+    id: 'acc-interest-expense',
+    code: '7020',
+    name: 'Interest & Finance Charges',
+    category: 'OTHER_EXPENSE',
+    subcategory: 'Finance Charges',
+    description: 'Interest paid on credit cards, overdrafts, or loans',
+    normalBalance: 'DEBIT',
+    isSystem: false,
+    isActive: true,
+    icon: 'Percent',
   },
 ];

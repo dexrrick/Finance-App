@@ -24,6 +24,10 @@ const getCategoryBadgeClass = (category: AccountCategory, isLight: boolean = fal
         return 'bg-sky-100 text-sky-800 border-sky-200';
       case 'EXPENSE':
         return 'bg-rose-100 text-rose-800 border-rose-200';
+      case 'OTHER_INCOME':
+        return 'bg-teal-100 text-teal-800 border-teal-200';
+      case 'OTHER_EXPENSE':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
       default:
         return 'bg-slate-100 text-slate-800 border-slate-200';
     }
@@ -40,6 +44,10 @@ const getCategoryBadgeClass = (category: AccountCategory, isLight: boolean = fal
       return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
     case 'EXPENSE':
       return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+    case 'OTHER_INCOME':
+      return 'bg-teal-500/10 text-teal-400 border-teal-500/20';
+    case 'OTHER_EXPENSE':
+      return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
     default:
       return 'bg-slate-800 text-slate-400 border-slate-700';
   }
