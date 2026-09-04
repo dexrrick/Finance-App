@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { AppSettings, UserProfile } from '../core/types';
 
-export type ActiveTab = 'dashboard' | 'journal' | 'reconcile' | 'accounts' | 'reports' | 'games';
+export type ActiveTab = 'dashboard' | 'journal' | 'reconcile' | 'accounts' | 'reports';
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -130,7 +130,6 @@ export const Navigation: React.FC<NavigationProps> = ({
               { id: 'reconcile', label: 'Bank Feeds', icon: RefreshCw },
               { id: 'accounts', label: 'Chart of Accounts', icon: Landmark },
               { id: 'reports', label: 'Statements', icon: ShieldCheck },
-              { id: 'games', label: 'Civilization Realm', icon: Layers, badge: `Era ${settings.realmState?.era || 1}` },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -151,17 +150,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                 >
                   <Icon className="w-3.5 h-3.5" />
                   <span>{tab.label}</span>
-                  {tab.badge && (
-                    <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
-                        isLight
-                          ? 'bg-slate-200 text-slate-700'
-                          : 'bg-slate-700 text-slate-300'
-                      }`}
-                    >
-                      {tab.badge}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -342,14 +330,13 @@ export const Navigation: React.FC<NavigationProps> = ({
           isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
         }`}
       >
-        <div className="grid grid-cols-6 gap-1 text-center">
+        <div className="grid grid-cols-5 gap-1 text-center">
           {[
             { id: 'dashboard', label: 'Home', icon: PieChart },
             { id: 'journal', label: 'Ledger', icon: BookOpen },
             { id: 'reconcile', label: 'Feed', icon: RefreshCw },
             { id: 'accounts', label: 'Accts', icon: Landmark },
             { id: 'reports', label: 'Reports', icon: ShieldCheck },
-            { id: 'games', label: 'Realm', icon: Layers },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

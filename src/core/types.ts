@@ -82,52 +82,10 @@ export interface IncomeStatement {
   totalExpense: number;
   netIncome: number;
 }
-
-export type FamilyRole = 'father' | 'mother' | 'son' | 'daughter' | 'grandparent' | 'pet_dog' | 'pet_cat';
-
-export interface FamilyMember {
-  id: string;
-  name: string;
-  role: FamilyRole;
-  avatarColor?: string;
-}
-
-export type MonumentType = 'wonder_pyramid' | 'town_hall' | 'solar_observatory' | 'orbital_beacon' | 'castle_keep';
-
-export interface FinancialGoal {
-  id: string;
-  title: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline?: string;
-  monumentType: MonumentType;
-  isCompleted: boolean;
-  createdAt: string;
-}
-
-export type DisasterType = 'earthquake' | 'tornado' | 'tsunami' | 'meteor';
-
-export interface DisasterRecord {
-  id: string;
-  type: DisasterType;
-  title: string;
-  description: string;
-  date: string;
-  expenseAmount: number;
-  xpLost: number;
-  damagePercent: number;
-}
-
 export interface BudgetConfig {
   dailyDiscretionaryBudget: number;    // E.g. $50
   monthlyDiscretionaryBudget: number;  // E.g. $1,500
   essentialAccountCodes: string[];     // E.g. ['5010', '5030', '5040', '5090', '2010', '2110']
-}
-
-export interface RealmState {
-  era: number;                         // 1 = Prehistory, 2 = Pioneer, 3 = Medieval, 4 = Modern, 5 = Futuristic, 6 = Space Age
-  health: number;                      // 0 - 100%
-  lastActiveDisaster?: DisasterRecord | null;
 }
 
 export interface UserProfile {
@@ -182,19 +140,7 @@ export interface AppSettings {
     autoSync: boolean;
     lastSyncedAt?: string;
   };
-  gamification?: {
-    xp: number;
-    level: number;
-    completedChallenges: string[];
-    highScoreLedger: number;
-    streakDays: number;
-    lastActiveDate: string;
-  };
-  family?: FamilyMember[];
-  goals?: FinancialGoal[];
-  disasters?: DisasterRecord[];
   budgetConfig?: BudgetConfig;
-  realmState?: RealmState;
   bankRules?: BankRule[];
 }
 

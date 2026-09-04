@@ -9,13 +9,10 @@ import { Dashboard } from './components/Dashboard';
 import { JournalView } from './components/JournalView';
 import { AccountsView } from './components/AccountsView';
 import { ReportsView } from './components/ReportsView';
-import { MiniGamesHub } from './components/games/MiniGamesHub';
+import { BankReconciliationView } from './components/BankReconciliationView';
 import { TransactionModal } from './components/TransactionModal';
 import { BackupSyncModal } from './components/BackupSyncModal';
 import { AuthModal } from './components/AuthModal';
-import { BankReconciliationView } from './components/BankReconciliationView';
-
-import { evaluateTransactionImpact } from './core/gamificationEngine';
 
 export function App() {
   const [accounts, setAccounts] = useState<Account[]>(() => AppDatabase.loadAccounts());
@@ -42,9 +39,6 @@ export function App() {
 
   // Backup & Sync Modal State
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
-
-  // Floating Realm Reaction Toast State
-  const [realmToast, setRealmToast] = useState<{ type: 'disaster' | 'success'; message: string } | null>(null);
 
   // Synchronize state changes to local-first database
   useEffect(() => {
@@ -96,31 +90,18 @@ export function App() {
 
     setTransactions(updatedTransactions);
 
-    // Gamification: evaluate impact on the Living Civilization Realm
-    const impact = evaluateTransactionImpact(savedTx, accounts, settings);
-    setSettings(impact.updatedSettings);
-
-    // Show floating realm toast
-    setRealmToast({
-      type: impact.disaster ? 'disaster' : 'success',
-      message: impact.message,
-    });
-    setTimeout(() => {
-      setRealmToast(null);
-    }, 5500);
-
     // Optional background auto-sync to Cloudflare
     if (
-      impact.updatedSettings.cloudSync?.autoSync &&
-      impact.updatedSettings.cloudSync?.workerUrl &&
-      impact.updatedSettings.cloudSync?.secretKey
+      settings.cloudSync?.autoSync &&
+      settings.cloudSync?.workerUrl &&
+      settings.cloudSync?.secretKey
     ) {
       CloudflareSyncClient.pushToCloud(
-        impact.updatedSettings.cloudSync.workerUrl,
-        impact.updatedSettings.cloudSync.secretKey,
+        settings.cloudSync.workerUrl,
+        settings.cloudSync.secretKey,
         accounts,
         updatedTransactions,
-        impact.updatedSettings
+        settings
       ).catch((err) => {
         console.warn('Auto-sync background warning:', err);
       });
@@ -168,32 +149,18 @@ export function App() {
     const updated = [...newTxs, ...transactions];
     setTransactions(updated);
 
-    // Gamification: evaluate transaction impact on Living Civilization Realm
-    let curSettings = settings;
-    newTxs.forEach((tx) => {
-      const impact = evaluateTransactionImpact(tx, accounts, curSettings);
-      curSettings = impact.updatedSettings;
-    });
-    setSettings(curSettings);
-
-    setRealmToast({
-      type: 'success',
-      message: `✓ Reconciled ${newTxs.length} transaction${newTxs.length > 1 ? 's' : ''} into ledger!`,
-    });
-    setTimeout(() => setRealmToast(null), 4500);
-
     // Optional background auto-sync to Cloudflare
     if (
-      curSettings.cloudSync?.autoSync &&
-      curSettings.cloudSync?.workerUrl &&
-      (curSettings.cloudSync?.secretKey || authToken)
+      settings.cloudSync?.autoSync &&
+      settings.cloudSync?.workerUrl &&
+      (settings.cloudSync?.secretKey || authToken)
     ) {
       CloudflareSyncClient.pushToCloud(
-        curSettings.cloudSync.workerUrl,
-        curSettings.cloudSync.secretKey || authToken || '',
+        settings.cloudSync.workerUrl,
+        settings.cloudSync.secretKey || authToken || '',
         accounts,
         updated,
-        curSettings
+        settings
       ).catch(() => {});
     }
   };
@@ -275,30 +242,6 @@ export function App() {
         trialBalanceBalanced={trialBalance.isBalanced}
       />
 
-      {/* Floating Realm Reaction Toast */}
-      {realmToast && (
-        <div className="fixed top-20 right-4 z-50 max-w-md animate-fade-in shadow-2xl">
-          <div
-            className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-xs font-medium backdrop-blur-md ${
-              realmToast.type === 'disaster'
-                ? 'bg-rose-950/90 border-rose-500/60 text-rose-200'
-                : 'bg-emerald-950/90 border-emerald-500/60 text-emerald-200'
-            }`}
-          >
-            <span>{realmToast.message}</span>
-            <button
-              onClick={() => {
-                setRealmToast(null);
-                setActiveTab('games');
-              }}
-              className="text-[10px] font-bold px-2 py-1 rounded bg-slate-900/80 text-white hover:bg-slate-800 shrink-0 border border-slate-700"
-            >
-              View Realm
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Main App Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {activeTab === 'dashboard' && (
@@ -348,14 +291,6 @@ export function App() {
             settings={settings}
           />
         )}
-
-        {activeTab === 'games' && (
-          <MiniGamesHub
-            accounts={accounts}
-            settings={settings}
-            onUpdateSettings={setSettings}
-          />
-        )}
       </main>
 
       {/* Footer */}
@@ -371,13 +306,6 @@ export function App() {
               className="hover:text-indigo-400 underline transition-colors"
             >
               Backup & Sync
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => setActiveTab('games')}
-              className="hover:text-amber-400 underline transition-colors"
-            >
-              Play Mini-Games
             </button>
           </div>
         </div>

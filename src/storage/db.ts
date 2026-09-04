@@ -16,51 +16,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     secretKey: '',
     autoSync: false,
   },
-  gamification: {
-    xp: 220,
-    level: 1,
-    completedChallenges: [],
-    highScoreLedger: 0,
-    streakDays: 3,
-    lastActiveDate: new Date().toISOString().split('T')[0],
-  },
-  family: [
-    { id: 'fam-1', name: 'Alex', role: 'father', avatarColor: '#3b82f6' },
-    { id: 'fam-2', name: 'Elena', role: 'mother', avatarColor: '#ec4899' },
-    { id: 'fam-3', name: 'Leo', role: 'son', avatarColor: '#10b981' },
-    { id: 'fam-4', name: 'Barkley', role: 'pet_dog', avatarColor: '#f59e0b' },
-  ],
-  goals: [
-    {
-      id: 'goal-1',
-      title: 'Emergency Safety Fund',
-      targetAmount: 5000,
-      currentAmount: 1800,
-      monumentType: 'town_hall',
-      isCompleted: false,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 'goal-2',
-      title: 'Dream Family Vacation',
-      targetAmount: 3000,
-      currentAmount: 850,
-      monumentType: 'wonder_pyramid',
-      isCompleted: false,
-      createdAt: new Date().toISOString(),
-    },
-  ],
   budgetConfig: {
     dailyDiscretionaryBudget: 50,
     monthlyDiscretionaryBudget: 1500,
     essentialAccountCodes: ['5010', '5030', '5040', '5090', '2010', '2110'],
   },
-  realmState: {
-    era: 1,
-    health: 100,
-    lastActiveDisaster: null,
-  },
-  disasters: [],
 };
 
 
@@ -122,10 +82,6 @@ export class AppDatabase {
         return {
           ...DEFAULT_SETTINGS,
           ...parsed,
-          gamification: {
-            ...DEFAULT_SETTINGS.gamification,
-            ...(parsed.gamification || {}),
-          },
           cloudSync: {
             ...DEFAULT_SETTINGS.cloudSync,
             ...(parsed.cloudSync || {}),
