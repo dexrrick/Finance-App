@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Upload,
   CheckCircle2,
@@ -16,15 +16,51 @@ import {
   RefreshCw,
   SlidersHorizontal,
   ClipboardList,
+  RotateCcw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Account, AppSettings, BankRule, BankStatementLine, Transaction } from '../core/types';
 import { BankStatementParser, ColumnMapping } from '../core/bankStatementParser';
 import { BankRulesEngine, DEFAULT_BANK_RULES } from '../core/bankRulesEngine';
 import { formatCurrency } from '../core/accounting';
+import { SearchableAccountSelect } from './SearchableAccountSelect';
+import { CurrencyService, SUPPORTED_CURRENCIES } from '../core/currencyService';
+
+const STORAGE_KEY_RECON_SESSION = 'finance_bank_feed_session_v2';
+
+interface ReconSessionData {
+  statementLines: BankStatementLine[];
+  uploadedFileName: string;
+  rawCSVText: string;
+  detectedHeaders: string[];
+  sampleRows: string[][];
+  uploadWarnings: string[];
+  columnMapping: ColumnMapping;
+  amountMode: 'single' | 'split';
+  manualAccountMap: Record<string, string>;
+  manualPayeeMap: Record<string, string>;
+  rememberRuleMap: Record<string, boolean>;
+  filterStatus: 'all' | 'unreconciled' | 'reconciled';
+  selectedBankAccountId?: string;
+  feedCurrency?: string;
+  detectedCurrencyNotice?: string;
+}
+
+const getStoredSession = (): ReconSessionData | null => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_RECON_SESSION);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn('Failed to parse bank feed session from localStorage', e);
+  }
+  return null;
+};
 
 interface BankReconciliationViewProps {
   accounts: Account[];
+  transactions: Transaction[];
   settings: AppSettings;
   onSaveTransactions: (transactions: Transaction[]) => void;
   onUpdateSettings: (settings: AppSettings) => void;
@@ -32,12 +68,28 @@ interface BankReconciliationViewProps {
 
 export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
   accounts,
+  transactions,
   settings,
   onSaveTransactions,
   onUpdateSettings,
 }) => {
   const currency = settings.currencySymbol || '$';
+  const baseCurrency = settings.baseCurrency || 'USD';
   const rules = settings.bankRules || DEFAULT_BANK_RULES;
+
+  const storedSession = useMemo(() => getStoredSession(), []);
+
+  // Statement Currency & Live FX Rate
+  const [feedCurrency, setFeedCurrency] = useState<string>(() => storedSession?.feedCurrency || baseCurrency);
+  const [detectedCurrencyNotice, setDetectedCurrencyNotice] = useState<string>(
+    () => storedSession?.detectedCurrencyNotice || ''
+  );
+
+  const { rate: feedExchangeRate } = useMemo(
+    () => CurrencyService.convert(1, feedCurrency, baseCurrency),
+    [feedCurrency, baseCurrency]
+  );
+  const feedCurrencyInfo = CurrencyService.getCurrencyInfo(feedCurrency);
 
   // Selected Bank Account in our Ledger to reconcile against (Defaults to 1010 Checking)
   const bankAccounts = useMemo(() => {
@@ -47,17 +99,20 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
   }, [accounts]);
 
   const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>(() => {
+    if (storedSession?.selectedBankAccountId && accounts.some((a) => a.id === storedSession.selectedBankAccountId)) {
+      return storedSession.selectedBankAccountId;
+    }
     const checking = bankAccounts.find((a) => a.code === '1010');
     return checking ? checking.id : bankAccounts[0]?.id || accounts[0]?.id || '';
   });
 
   // Statement lines and raw file memory
-  const [statementLines, setStatementLines] = useState<BankStatementLine[]>([]);
-  const [rawCSVText, setRawCSVText] = useState<string>('');
-  const [uploadedFileName, setUploadedFileName] = useState<string>('');
-  const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
-  const [sampleRows, setSampleRows] = useState<string[][]>([]);
-  const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
+  const [statementLines, setStatementLines] = useState<BankStatementLine[]>(() => storedSession?.statementLines || []);
+  const [rawCSVText, setRawCSVText] = useState<string>(() => storedSession?.rawCSVText || '');
+  const [uploadedFileName, setUploadedFileName] = useState<string>(() => storedSession?.uploadedFileName || '');
+  const [detectedHeaders, setDetectedHeaders] = useState<string[]>(() => storedSession?.detectedHeaders || []);
+  const [sampleRows, setSampleRows] = useState<string[][]>(() => storedSession?.sampleRows || []);
+  const [uploadWarnings, setUploadWarnings] = useState<string[]>(() => storedSession?.uploadWarnings || []);
 
   // Modals
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
@@ -66,21 +121,110 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
   const [pastedText, setPastedText] = useState('');
 
   // Column Mapping state
-  const [columnMapping, setColumnMapping] = useState<ColumnMapping>({
+  const [columnMapping, setColumnMapping] = useState<ColumnMapping>(() => storedSession?.columnMapping || {
     headerRowIndex: 0,
     dateCol: 0,
     descCol: 1,
     amountCol: 2,
   });
-  const [amountMode, setAmountMode] = useState<'single' | 'split'>('single');
+  const [amountMode, setAmountMode] = useState<'single' | 'split'>(() => storedSession?.amountMode || 'single');
 
   // Manual categorization form state per line
-  const [manualAccountMap, setManualAccountMap] = useState<Record<string, string>>({});
-  const [manualPayeeMap, setManualPayeeMap] = useState<Record<string, string>>({});
-  const [rememberRuleMap, setRememberRuleMap] = useState<Record<string, boolean>>({});
+  const [manualAccountMap, setManualAccountMap] = useState<Record<string, string>>(() => storedSession?.manualAccountMap || {});
+  const [manualPayeeMap, setManualPayeeMap] = useState<Record<string, string>>(() => storedSession?.manualPayeeMap || {});
+  const [rememberRuleMap, setRememberRuleMap] = useState<Record<string, boolean>>(() => storedSession?.rememberRuleMap || {});
+
+  // Expanded details per card (collapsed by default to prevent clutter)
+  const [expandedDetailsMap, setExpandedDetailsMap] = useState<Record<string, boolean>>({});
 
   // Filter for view
-  const [filterStatus, setFilterStatus] = useState<'all' | 'unreconciled' | 'reconciled'>('unreconciled');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'unreconciled' | 'reconciled'>(() => storedSession?.filterStatus || 'unreconciled');
+
+  // Automatically save session to localStorage whenever state updates
+  useEffect(() => {
+    if (statementLines.length > 0) {
+      const session: ReconSessionData = {
+        statementLines,
+        uploadedFileName,
+        rawCSVText,
+        detectedHeaders,
+        sampleRows,
+        uploadWarnings,
+        columnMapping,
+        amountMode,
+        manualAccountMap,
+        manualPayeeMap,
+        rememberRuleMap,
+        filterStatus,
+        selectedBankAccountId,
+        feedCurrency,
+        detectedCurrencyNotice,
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY_RECON_SESSION, JSON.stringify(session));
+      } catch (e) {
+        console.warn('Failed to save bank feed session to localStorage', e);
+      }
+    } else {
+      localStorage.removeItem(STORAGE_KEY_RECON_SESSION);
+    }
+  }, [
+    statementLines,
+    uploadedFileName,
+    rawCSVText,
+    detectedHeaders,
+    sampleRows,
+    uploadWarnings,
+    columnMapping,
+    amountMode,
+    manualAccountMap,
+    manualPayeeMap,
+    rememberRuleMap,
+    filterStatus,
+    selectedBankAccountId,
+    feedCurrency,
+    detectedCurrencyNotice,
+  ]);
+
+  // Auto-sync statementLines status with Ledger transactions:
+  // If a reconciled transaction is deleted in the Ledger tab, mark its statement line unreconciled so it shows up in Feeds again.
+  // If a deleted transaction is restored via Undo, re-mark the statement line as reconciled.
+  useEffect(() => {
+    setStatementLines((prev) => {
+      let changed = false;
+      const updated = prev.map((line) => {
+        const matchingTx = transactions.find(
+          (t) =>
+            (line.reconciledTxId && t.id === line.reconciledTxId) ||
+            (t.meta?.reconciledFromLineId && t.meta.reconciledFromLineId === line.id)
+        );
+
+        if (line.status === 'reconciled' && !matchingTx) {
+          // Transaction was deleted in Ledger! Revert feed line to unreconciled so user sees it again
+          changed = true;
+          return {
+            ...line,
+            status: 'unreconciled' as const,
+            reconciledTxId: undefined,
+          };
+        }
+
+        if (line.status === 'unreconciled' && matchingTx) {
+          // Transaction was restored in Ledger! Re-mark as reconciled
+          changed = true;
+          return {
+            ...line,
+            status: 'reconciled' as const,
+            reconciledTxId: matchingTx.id,
+          };
+        }
+
+        return line;
+      });
+
+      return changed ? updated : prev;
+    });
+  }, [transactions]);
 
   // New custom rule state
   const [newRulePattern, setNewRulePattern] = useState('');
@@ -121,10 +265,25 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
   };
 
   const processCSVContent = (csvText: string, customMap?: Partial<ColumnMapping>) => {
-    const { lines, headers, rawRows, warnings } = BankStatementParser.parseCSV(csvText, customMap);
+    const {
+      lines,
+      headers,
+      rawRows,
+      warnings,
+      detectedCurrency,
+      detectedCurrencyReason,
+    } = BankStatementParser.parseCSV(csvText, customMap);
     setDetectedHeaders(headers);
     setSampleRows(rawRows);
     setUploadWarnings(warnings);
+
+    if (detectedCurrency) {
+      setFeedCurrency(detectedCurrency);
+      setDetectedCurrencyNotice(`⚡ Auto-detected: ${detectedCurrency} (${detectedCurrencyReason})`);
+    } else if (!storedSession?.feedCurrency) {
+      setFeedCurrency(baseCurrency);
+      setDetectedCurrencyNotice('');
+    }
 
     if (customMap) {
       setColumnMapping((prev) => ({ ...prev, ...customMap }));
@@ -190,7 +349,11 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
       line,
       targetAccountId,
       selectedBankAccountId,
-      payee
+      payee,
+      undefined,
+      feedCurrency,
+      baseCurrency,
+      feedExchangeRate
     );
 
     // Save transaction to system
@@ -235,7 +398,11 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
         line,
         line.suggestedAccountId!,
         selectedBankAccountId,
-        line.suggestedPayee
+        line.suggestedPayee,
+        undefined,
+        feedCurrency,
+        baseCurrency,
+        feedExchangeRate
       );
       generatedTxs.push(tx);
     });
@@ -284,10 +451,47 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
     });
   };
 
+  const handleClearStatement = () => {
+    if (window.confirm('Clear current bank statement? Any unreconciled progress in this session will be removed.')) {
+      setStatementLines([]);
+      setRawCSVText('');
+      setUploadedFileName('');
+      setDetectedHeaders([]);
+      setSampleRows([]);
+      setUploadWarnings([]);
+      setManualAccountMap({});
+      setManualPayeeMap({});
+      setRememberRuleMap({});
+      setExpandedDetailsMap({});
+      setFeedCurrency(baseCurrency);
+      setDetectedCurrencyNotice('');
+      localStorage.removeItem(STORAGE_KEY_RECON_SESSION);
+    }
+  };
+
+  const handleSkipLine = (lineId: string) => {
+    setStatementLines((prev) =>
+      prev.map((l) => (l.id === lineId ? { ...l, status: 'ignored' } : l))
+    );
+  };
+
+  const handleUnreconcileLine = (lineId: string) => {
+    setStatementLines((prev) =>
+      prev.map((l) => (l.id === lineId ? { ...l, status: 'unreconciled' } : l))
+    );
+  };
+
+  const toggleDetails = (lineId: string) => {
+    setExpandedDetailsMap((prev) => ({
+      ...prev,
+      [lineId]: !prev[lineId],
+    }));
+  };
+
   // Metrics
   const totalCount = statementLines.length;
   const reconciledCount = statementLines.filter((l) => l.status === 'reconciled').length;
-  const unreconciledCount = totalCount - reconciledCount;
+  const unreconciledCount = statementLines.filter((l) => l.status === 'unreconciled').length;
   const matchedCount = statementLines.filter((l) => l.status === 'unreconciled' && l.suggestedAccountId).length;
   const percentComplete = totalCount > 0 ? Math.round((reconciledCount / totalCount) * 100) : 0;
 
@@ -301,56 +505,91 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Top Header & Bank Account Selection Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-lg font-bold text-white tracking-tight">Bank Feed & Reconciliation</h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
-              Xero-Style Match
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Import monthly bank statements, automatically match transactions with rules, and approve with 1-click [OK].
-          </p>
-        </div>
-
-        {/* Bank Account Selector & Actions */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
-            <span className="text-slate-400 font-medium">Reconciling:</span>
-            <select
-              value={selectedBankAccountId}
-              onChange={(e) => setSelectedBankAccountId(e.target.value)}
-              className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer"
-            >
-              {bankAccounts.map((acc) => (
-                <option key={acc.id} value={acc.id} className="bg-slate-900 text-white">
-                  {acc.code} - {acc.name}
-                </option>
-              ))}
-            </select>
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-white tracking-tight">Bank Feed & Reconciliation</h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
+                Auto-Match
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Review statement lines, match rules, and approve into your double-entry ledger.
+            </p>
           </div>
 
-          {detectedHeaders.length > 0 && (
+          {/* Bank Account Selector, Currency Selector & Rules */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+              <span className="text-slate-400 text-[11px] font-medium">Reconciling:</span>
+              <select
+                value={selectedBankAccountId}
+                onChange={(e) => setSelectedBankAccountId(e.target.value)}
+                className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer text-xs"
+              >
+                {bankAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id} className="bg-slate-900 text-white">
+                    {acc.code} - {acc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Statement Currency Selector */}
+            <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+              <span className="text-slate-400 text-[11px] font-medium">Currency:</span>
+              <select
+                value={feedCurrency}
+                onChange={(e) => {
+                  setFeedCurrency(e.target.value);
+                  setDetectedCurrencyNotice('');
+                }}
+                className="bg-transparent text-white font-bold focus:outline-none cursor-pointer text-xs font-mono"
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code} className="bg-slate-900 text-white">
+                    {c.code} ({c.symbol})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
               type="button"
-              onClick={() => setIsColumnMapperOpen(true)}
+              onClick={() => setIsRulesModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Map Columns</span>
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>Rules ({rules.length})</span>
             </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setIsRulesModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
-          >
-            <SettingsIcon className="w-3.5 h-3.5" />
-            <span>Bank Rules ({rules.length})</span>
-          </button>
+          </div>
         </div>
+
+        {/* Currency Auto-detection Notice or FX Conversion Note */}
+        {detectedCurrencyNotice && (
+          <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300 animate-fade-in">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span className="font-semibold">{detectedCurrencyNotice}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDetectedCurrencyNotice('')}
+              className="text-emerald-400 hover:text-white text-xs px-1"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {feedCurrency !== baseCurrency && (
+          <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-indigo-950/30 border border-indigo-500/20 text-xs text-indigo-300">
+            <span>
+              FX Rate: 1 {feedCurrency} = {feedExchangeRate} {baseCurrency} (Reconciled transactions converted to {baseCurrency})
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Warnings / Fallback Banner */}
@@ -375,7 +614,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
 
       {/* Upload Dropzone & Demo Action */}
       {statementLines.length === 0 ? (
-        <div className="bg-slate-900 border-2 border-dashed border-slate-700/80 rounded-3xl p-10 text-center shadow-sm">
+        <div className="bg-slate-900 border-2 border-dashed border-slate-700/80 rounded-3xl p-8 sm:p-10 text-center shadow-sm">
           <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto mb-4 border border-indigo-500/20">
             <Upload className="w-8 h-8" />
           </div>
@@ -414,63 +653,65 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
         </div>
       ) : (
         /* Reconciliation Control & Progress Dashboard */
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-white">
-                  Statement Progress: {reconciledCount} of {totalCount} Reconciled ({percentComplete}%)
+                  {reconciledCount} of {totalCount} Reconciled
                 </span>
-                {percentComplete === 100 && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                    <CheckCircle2 className="w-3 h-3" /> Fully Reconciled
-                  </span>
-                )}
+                <span
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                    percentComplete === 100
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-indigo-500/20 text-indigo-300'
+                  }`}
+                >
+                  {percentComplete}% Complete
+                </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
                 {uploadedFileName && <span className="text-slate-300 font-mono font-medium mr-2">{uploadedFileName}</span>}
-                {matchedCount} lines matched automated bank rules ready for instant confirmation.
+                {matchedCount > 0 ? `${matchedCount} lines matched automated bank rules` : 'Ready to categorize'}
               </p>
             </div>
 
-            {/* Actions: Accept All Matched & Import Another */}
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            {/* Actions */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               {matchedCount > 0 && (
                 <button
                   type="button"
                   onClick={handleAcceptAllMatched}
-                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center gap-1.5"
                 >
                   <Zap className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
-                  <span>Accept All Matched ({matchedCount})</span>
+                  <span>Approve All Matched ({matchedCount})</span>
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={() => setIsColumnMapperOpen(true)}
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5"
-                title="Adjust Column Mapping"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Columns</span>
-              </button>
+              {detectedHeaders.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsColumnMapperOpen(true)}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition-colors"
+                  title="Adjust Columns"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </button>
+              )}
 
-              <label className="cursor-pointer px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">New File</span>
+              <label
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 cursor-pointer transition-colors"
+                title="Import New CSV"
+              >
+                <Upload className="w-4 h-4" />
                 <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileUpload} className="hidden" />
               </label>
 
               <button
                 type="button"
-                onClick={() => {
-                  setStatementLines([]);
-                  setRawCSVText('');
-                  setUploadedFileName('');
-                  setUploadWarnings([]);
-                }}
-                className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors"
+                onClick={handleClearStatement}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-700 transition-colors"
                 title="Clear current statement"
               >
                 <Trash2 className="w-4 h-4" />
@@ -479,40 +720,44 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+          <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
             <div
-              className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+              className="bg-emerald-500 h-full rounded-full transition-all duration-300"
               style={{ width: `${percentComplete}%` }}
             />
           </div>
 
-          {/* Filter Pills */}
+          {/* Filter Segment Pills */}
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-xs text-slate-500 font-medium">Show:</span>
             <button
+              type="button"
               onClick={() => setFilterStatus('unreconciled')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 filterStatus === 'unreconciled'
-                  ? 'bg-indigo-600 text-white font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white bg-slate-950/60'
               }`}
             >
               Needs Review ({unreconciledCount})
             </button>
             <button
+              type="button"
               onClick={() => setFilterStatus('reconciled')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 filterStatus === 'reconciled'
-                  ? 'bg-indigo-600 text-white font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white bg-slate-950/60'
               }`}
             >
               Reconciled ({reconciledCount})
             </button>
             <button
+              type="button"
               onClick={() => setFilterStatus('all')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                filterStatus === 'all' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                filterStatus === 'all'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white bg-slate-950/60'
               }`}
             >
               All ({totalCount})
@@ -521,11 +766,12 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
         </div>
       )}
 
-      {/* ================= XERO-STYLE TWO-COLUMN RECONCILIATION TABLE ================= */}
+      {/* ================= MODERN STREAMLINED RECONCILIATION CARDS ================= */}
       {displayedLines.length > 0 && (
         <div className="space-y-3">
           {displayedLines.map((line) => {
             const isReconciled = line.status === 'reconciled';
+            const isIgnored = line.status === 'ignored';
             const matchedRule = rules.find((r) => r.id === line.matchedRuleId);
             const isInflow = line.amount > 0;
             const absAmount = Math.abs(line.amount);
@@ -541,120 +787,158 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
             const activeAccount = accounts.find((a) => a.id === activeAccountId);
             const activePayee = manualPayeeMap[line.id] || line.suggestedPayee || line.description;
             const rememberThis = Boolean(rememberRuleMap[line.id]);
+            const isExpanded = Boolean(expandedDetailsMap[line.id]);
 
             return (
               <div
                 key={line.id}
-                className={`rounded-2xl border transition-all overflow-hidden ${
+                className={`rounded-2xl border transition-all p-4 space-y-3 ${
                   isReconciled
                     ? 'bg-slate-900/40 border-slate-800/60 opacity-60'
+                    : isIgnored
+                    ? 'bg-slate-900/30 border-slate-800/40 opacity-40'
                     : line.suggestedAccountId
-                    ? 'bg-slate-900 border-emerald-500/40 shadow-sm'
-                    : 'bg-slate-900 border-slate-800'
+                    ? 'bg-slate-900/90 border-emerald-500/30 shadow-sm'
+                    : 'bg-slate-900/90 border-slate-800 shadow-sm'
                 }`}
               >
-                <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-800">
-                  {/* LEFT SIDE: Bank Statement Line */}
-                  <div className="lg:col-span-5 p-4 sm:p-5 flex flex-col justify-between space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="text-[11px] font-mono font-medium text-slate-400">{line.date}</span>
-                        <h4 className="font-semibold text-sm text-white mt-0.5 break-words">
-                          {line.description}
-                        </h4>
+                {/* Row 1: Date & Amount Badge */}
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-mono font-medium text-slate-400">
+                    {line.date}
+                  </span>
+                  <div className="flex flex-col items-end">
+                    <span
+                      className={`text-sm font-bold font-mono px-2.5 py-0.5 rounded-lg border ${
+                        isInflow
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-rose-500/10 text-rose-300 border-rose-500/20'
+                      }`}
+                    >
+                      {isInflow ? '+' : '-'}{formatCurrency(absAmount, feedCurrencyInfo.symbol)}
+                    </span>
+                    {feedCurrency !== baseCurrency && (
+                      <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        ≈ {currency}{(Math.round(absAmount * feedExchangeRate * 100) / 100).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 2: Clean Narrative */}
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-100 break-words leading-snug">
+                    {line.description}
+                  </h4>
+                  {activePayee !== line.description && (
+                    <p className="text-xs text-slate-400 mt-0.5 font-medium">
+                      Payee: <span className="text-slate-200">{activePayee}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Row 3: Action & Offsetting Account */}
+                {isReconciled ? (
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-xs">
+                    <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span>Reconciled to {activeAccount?.name || 'Ledger'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUnreconcileLine(line.id)}
+                      className="text-[11px] text-slate-500 hover:text-slate-300 underline"
+                    >
+                      Undo
+                    </button>
+                  </div>
+                ) : isIgnored ? (
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-xs">
+                    <span className="text-slate-500 italic">Skipped</span>
+                    <button
+                      type="button"
+                      onClick={() => handleUnreconcileLine(line.id)}
+                      className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold"
+                    >
+                      Restore
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 pt-1 border-t border-slate-800/60">
+                    {/* Auto-Match rule badge if matched */}
+                    {line.suggestedAccountId && (
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                          <Zap className="w-3 h-3 fill-emerald-400" />
+                          {matchedRule?.name || 'Auto-Matched Rule'}
+                        </span>
                       </div>
-                      {/* Amount: Spent vs Received */}
-                      <div className="text-right shrink-0">
-                        <span
-                          className={`text-base font-bold font-mono ${
-                            isInflow ? 'text-emerald-400' : 'text-slate-100'
+                    )}
+
+                    {/* Account Selector + 1-Tap Approve Button */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <SearchableAccountSelect
+                        accounts={accounts}
+                        value={activeAccountId}
+                        onChange={(accId) =>
+                          setManualAccountMap({ ...manualAccountMap, [line.id]: accId })
+                        }
+                        isLight={settings.theme === 'light'}
+                        placeholder="Type account # or name..."
+                      />
+
+                      <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleReconcileLine(line)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 ${
+                            line.suggestedAccountId
+                              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
+                              : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
                           }`}
                         >
-                          {isInflow ? '+' : '-'}
-                          {formatCurrency(absAmount, currency)}
-                        </span>
-                        <p className="text-[10px] uppercase font-bold text-slate-500 mt-0.5">
-                          {isInflow ? 'Received (In)' : 'Spent (Out)'}
-                        </p>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Approve</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSkipLine(line.id)}
+                          className="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs transition-colors"
+                          title="Skip this line"
+                        >
+                          Skip
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                      <span>Raw Bank Narrative</span>
-                    </div>
-                  </div>
+                    {/* Collapsible toggle for custom Payee & Remember Rule */}
+                    <div className="pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleDetails(line.id)}
+                        className="text-[11px] text-slate-400 hover:text-indigo-400 flex items-center gap-1 transition-colors"
+                      >
+                        <span>{isExpanded ? 'Hide details' : 'Edit payee or save rule'}</span>
+                        <ChevronRight className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                      </button>
 
-                  {/* RIGHT SIDE: Antigravity Match & 1-Click Action */}
-                  <div className="lg:col-span-7 p-4 sm:p-5 flex flex-col justify-between space-y-3 bg-slate-950/40">
-                    {isReconciled ? (
-                      /* Already Reconciled State */
-                      <div className="flex items-center justify-between h-full">
-                        <div className="flex items-center gap-2 text-emerald-400 font-semibold text-xs">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Reconciled into Double-Entry Ledger</span>
-                        </div>
-                        <span className="text-[11px] font-mono text-slate-500">Recorded ✓</span>
-                      </div>
-                    ) : (
-                      /* Unreconciled Match / Categorize Card */
-                      <>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                          {/* Rule Matched Badge */}
-                          {line.suggestedAccountId ? (
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-                              <Zap className="w-3.5 h-3.5 fill-emerald-400" />
-                              <span>Rule Matched: {matchedRule?.name || 'Smart Suggestion'}</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
-                              <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
-                              <span>Select Offsetting Account:</span>
-                            </div>
-                          )}
-
-                          <span className="text-[10px] text-slate-500">
-                            {isInflow ? 'Creates: Dr Bank / Cr Revenue' : 'Creates: Dr Expense / Cr Bank'}
-                          </span>
-                        </div>
-
-                        {/* Input Controls */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {/* Account Picker */}
+                      {isExpanded && (
+                        <div className="mt-2.5 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-2.5 animate-fade-in">
                           <div className="space-y-1">
-                            <label className="text-[10px] font-semibold text-slate-400 uppercase">Account</label>
-                            <select
-                              value={activeAccountId}
-                              onChange={(e) =>
-                                setManualAccountMap({ ...manualAccountMap, [line.id]: e.target.value })
-                              }
-                              className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-medium focus:border-indigo-500 focus:outline-none"
-                            >
-                              {accounts
-                                .filter((a) => a.category === (isInflow ? 'REVENUE' : 'EXPENSE') || a.category === 'ASSET' || a.category === 'LIABILITY')
-                                .map((a) => (
-                                  <option key={a.id} value={a.id}>
-                                    {a.code} - {a.name} ({a.category})
-                                  </option>
-                                ))}
-                            </select>
-                          </div>
-
-                          {/* Normalized Payee */}
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-semibold text-slate-400 uppercase">Payee / Entity</label>
+                            <label className="text-[10px] uppercase font-semibold text-slate-400">Payee / Entity</label>
                             <input
                               type="text"
                               value={activePayee}
-                              onChange={(e) => setManualPayeeMap({ ...manualPayeeMap, [line.id]: e.target.value })}
+                              onChange={(e) =>
+                                setManualPayeeMap({ ...manualPayeeMap, [line.id]: e.target.value })
+                              }
                               placeholder="Clean payee name"
-                              className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-medium focus:border-indigo-500 focus:outline-none"
+                              className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500"
                             />
                           </div>
-                        </div>
 
-                        {/* Bottom Row: Remember checkbox & 1-Click OK Button */}
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
-                          {!line.suggestedAccountId ? (
+                          {!line.suggestedAccountId && (
                             <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
                               <input
                                 type="checkbox"
@@ -666,30 +950,12 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
                               />
                               <span>Remember rule for future statements</span>
                             </label>
-                          ) : (
-                            <div className="text-[11px] text-emerald-400 font-mono">
-                              Ready to post: {activeAccount?.name}
-                            </div>
                           )}
-
-                          {/* THE FAMOUS 1-CLICK OK BUTTON */}
-                          <button
-                            type="button"
-                            onClick={() => handleReconcileLine(line)}
-                            className={`px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-2 ${
-                              line.suggestedAccountId
-                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
-                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30'
-                            }`}
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>✓ OK</span>
-                          </button>
                         </div>
-                      </>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
@@ -984,17 +1250,13 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-slate-400 font-semibold uppercase">Assign Account</label>
-                  <select
+                  <SearchableAccountSelect
+                    accounts={accounts}
                     value={newRuleAccountId}
-                    onChange={(e) => setNewRuleAccountId(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
-                  >
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.code} - {a.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(accId) => setNewRuleAccountId(accId)}
+                    isLight={settings.theme === 'light'}
+                    placeholder="Search account code or name..."
+                  />
                 </div>
               </div>
 

@@ -138,7 +138,14 @@ export class BankStatementParser {
   static parseCSV(
     csvContent: string,
     customMapping?: Partial<ColumnMapping>
-  ): { lines: BankStatementLine[]; headers: string[]; rawRows: string[][]; warnings: string[] } {
+  ): {
+    lines: BankStatementLine[];
+    headers: string[];
+    rawRows: string[][];
+    warnings: string[];
+    detectedCurrency?: string | null;
+    detectedCurrencyReason?: string | null;
+  } {
     const warnings: string[] = [];
     const matrix = this.parseCSVMatrix(csvContent);
 
@@ -148,6 +155,8 @@ export class BankStatementParser {
         headers: [],
         rawRows: [],
         warnings: ['CSV file appears empty or has fewer than 2 rows.'],
+        detectedCurrency: null,
+        detectedCurrencyReason: null,
       };
     }
 
@@ -227,7 +236,93 @@ export class BankStatementParser {
       );
     }
 
-    return { lines: parsedLines, headers, rawRows: sampleRows, warnings };
+    const { currency: detectedCurrency, reason: detectedCurrencyReason } = this.detectCurrency(
+      csvContent,
+      headers,
+      sampleRows
+    );
+
+    return {
+      lines: parsedLines,
+      headers,
+      rawRows: sampleRows,
+      warnings,
+      detectedCurrency,
+      detectedCurrencyReason,
+    };
+  }
+
+  /**
+   * Auto-detect currency from CSV headers, preamble lines, dedicated columns, or cell values
+   */
+  static detectCurrency(
+    csvContent: string,
+    headers: string[],
+    sampleRows: string[][]
+  ): { currency: string | null; reason: string | null } {
+    const KNOWN_CODES = [
+      'USD', 'EUR', 'GBP', 'MYR', 'SGD', 'JPY', 'AUD', 'CAD', 'CHF',
+      'CNY', 'HKD', 'INR', 'IDR', 'KRW', 'THB', 'PHP', 'NZD', 'BRL',
+      'MXN', 'NOK', 'SEK', 'DKK', 'PLN', 'TRY', 'ZAR'
+    ];
+
+    // 1. Check for dedicated currency column
+    const curColIdx = headers.findIndex((h) =>
+      /^(currency|ccy|cur|curr)$/i.test(h.trim())
+    );
+    if (curColIdx !== -1 && sampleRows.length > 0) {
+      for (const row of sampleRows) {
+        const val = (row[curColIdx] || '').trim().toUpperCase();
+        if (KNOWN_CODES.includes(val)) {
+          return { currency: val, reason: `from "${headers[curColIdx]}" column` };
+        }
+      }
+    }
+
+    // 2. Check headers for currency codes/symbols in parentheses or text
+    for (const h of headers) {
+      for (const code of KNOWN_CODES) {
+        const regex = new RegExp(`[\\(\\[\\s_-]${code}[\\)\\]\\s_-]|^${code}[\\s_-]|[\\s_-]${code}$`, 'i');
+        if (regex.test(h)) {
+          return { currency: code, reason: `from header "${h}"` };
+        }
+      }
+      if (/\(RM\)|RM\b/i.test(h)) return { currency: 'MYR', reason: `from header "${h}"` };
+      if (/S\$/i.test(h)) return { currency: 'SGD', reason: `from header "${h}"` };
+      if (/€/i.test(h)) return { currency: 'EUR', reason: `from header "${h}"` };
+      if (/£/i.test(h)) return { currency: 'GBP', reason: `from header "${h}"` };
+      if (/¥/i.test(h)) return { currency: 'JPY', reason: `from header "${h}"` };
+    }
+
+    // 3. Check preamble metadata (first 25 lines of raw CSV)
+    const preambleLines = csvContent.split(/\r?\n/).slice(0, 25);
+    for (const line of preambleLines) {
+      const match = line.match(/currency(?:\s*code)?\s*[:=,]\s*"?([A-Za-z]{3})"?/i);
+      if (match && match[1]) {
+        const code = match[1].toUpperCase();
+        if (KNOWN_CODES.includes(code)) {
+          return { currency: code, reason: `from statement metadata ("${line.trim().slice(0, 35)}")` };
+        }
+      }
+    }
+
+    // 4. Check sample amount cell values
+    for (const row of sampleRows) {
+      for (const cell of row) {
+        const trimmed = (cell || '').trim();
+        for (const code of KNOWN_CODES) {
+          if (new RegExp(`^${code}\\s*\\d|\\d\\s*${code}$`, 'i').test(trimmed)) {
+            return { currency: code, reason: `from cell "${trimmed}"` };
+          }
+        }
+        if (/^RM\s*\d/i.test(trimmed)) return { currency: 'MYR', reason: `from cell "${trimmed}"` };
+        if (/^S\$\s*\d/i.test(trimmed)) return { currency: 'SGD', reason: `from cell "${trimmed}"` };
+        if (/^€\s*\d/i.test(trimmed)) return { currency: 'EUR', reason: `from cell "${trimmed}"` };
+        if (/^£\s*\d/i.test(trimmed)) return { currency: 'GBP', reason: `from cell "${trimmed}"` };
+      }
+    }
+
+    return { currency: null, reason: null };
   }
 
   /**

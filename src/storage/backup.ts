@@ -14,7 +14,7 @@ export function downloadBackupFile(
   const backupData: AppDataBackup = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    generator: 'Antigravity Accounting Wallet v1.0',
+    generator: 'Finance Accounting Wallet v1.0',
     accounts,
     transactions,
     settings,

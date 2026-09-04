@@ -201,12 +201,21 @@ export class BankRulesEngine {
     offsetAccountId: string,
     bankAccountId: string,
     customPayee?: string,
-    customMemo?: string
+    customMemo?: string,
+    feedCurrency?: string,
+    baseCurrency?: string,
+    exchangeRate?: number
   ): Transaction {
     const absAmount = Math.round(Math.abs(line.amount) * 100) / 100;
     const payee = customPayee || line.suggestedPayee || line.description;
     const memo = customMemo || `Reconciled from bank statement: ${line.description}`;
     const isInflow = line.amount > 0;
+
+    const rate = exchangeRate || 1.0;
+    const curr = feedCurrency || baseCurrency || 'USD';
+    const base = baseCurrency || 'USD';
+    const isForeign = curr !== base;
+    const effectiveBaseAmt = isForeign ? Math.round(absAmount * rate * 100) / 100 : absAmount;
 
     let legs: EntryLeg[] = [];
 
@@ -217,13 +226,13 @@ export class BankRulesEngine {
           id: 'leg-' + Date.now() + '-1',
           accountId: bankAccountId,
           type: 'DEBIT',
-          amount: absAmount,
+          amount: effectiveBaseAmt,
         },
         {
           id: 'leg-' + Date.now() + '-2',
           accountId: offsetAccountId,
           type: 'CREDIT',
-          amount: absAmount,
+          amount: effectiveBaseAmt,
         },
       ];
     } else {
@@ -233,13 +242,13 @@ export class BankRulesEngine {
           id: 'leg-' + Date.now() + '-1',
           accountId: offsetAccountId,
           type: 'DEBIT',
-          amount: absAmount,
+          amount: effectiveBaseAmt,
         },
         {
           id: 'leg-' + Date.now() + '-2',
           accountId: bankAccountId,
           type: 'CREDIT',
-          amount: absAmount,
+          amount: effectiveBaseAmt,
         },
       ];
     }
@@ -256,6 +265,10 @@ export class BankRulesEngine {
         simpleMode: isInflow ? 'income' : 'expense',
         reconciledFromLineId: line.id,
         memo,
+        currency: curr,
+        originalAmount: absAmount,
+        exchangeRate: rate,
+        baseCurrency: base,
       },
       createdAt: nowIso,
       updatedAt: nowIso,

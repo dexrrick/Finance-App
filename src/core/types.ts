@@ -36,6 +36,10 @@ export interface Transaction {
     categoryAccountId?: string;
     reconciledFromLineId?: string;
     memo?: string;
+    currency?: string;        // Foreign currency code (e.g. 'EUR', 'MYR')
+    originalAmount?: number;  // Amount in foreign currency
+    exchangeRate?: number;    // Applied exchange rate to base currency
+    baseCurrency?: string;    // Base currency at time of transaction
   };
   createdAt: string;
   updatedAt: string;
@@ -92,6 +96,9 @@ export interface UserProfile {
   id: string;
   email: string;
   username: string;
+  displayName?: string;
+  photoUrl?: string;
+  provider?: 'google' | 'guest';
   createdAt: string;
 }
 
@@ -101,6 +108,17 @@ export interface AuthResponse {
   token?: string;
   user?: UserProfile;
 }
+
+export type NavTabId = 'dashboard' | 'journal' | 'reconcile' | 'accounts' | 'reports' | 'settings';
+
+export interface TabConfigItem {
+  id: NavTabId;
+  label: string;
+  enabled: boolean;
+}
+
+export type FontSizePreference = 'default' | 'small' | 'normal' | 'large' | 'xlarge';
+export type TabPositionPreference = 'bottom' | 'top';
 
 export interface BankStatementLine {
   id: string;
@@ -124,19 +142,49 @@ export interface BankRule {
   defaultPayee?: string;
 }
 
+export type DashboardCardId =
+  | 'equation_status'
+  | 'net_worth'
+  | 'total_assets'
+  | 'total_liabilities'
+  | 'net_income'
+  | 'quick_actions'
+  | 'recent_transactions'
+  | 'expense_breakdown'
+  | 'liquid_cash';
+
+export interface DashboardCardConfig {
+  id: DashboardCardId;
+  label: string;
+  enabled: boolean;
+}
+
+export type AccountColumnId = 'name' | 'category' | 'balance' | 'code' | 'subcategory' | 'normalBalance';
+
+export interface AccountColumnConfig {
+  id: AccountColumnId;
+  label: string;
+  enabled: boolean;
+}
+
 export interface AppSettings {
   currencySymbol: string;
+  baseCurrency?: string;
+  baseCurrencyLocked?: boolean;
   dateFormat: string;
   enableSound: boolean;
   theme?: 'dark' | 'light';
+  fontSize?: FontSizePreference;
+  tabPosition?: TabPositionPreference;
+  tabConfig?: TabConfigItem[];
+  dashboardCards?: DashboardCardConfig[];
+  accountColumns?: AccountColumnConfig[];
   auth?: {
     user: UserProfile | null;
     token: string | null;
     isGuest?: boolean;
   };
-  cloudSync?: {
-    workerUrl: string;
-    secretKey: string;
+  googleSync?: {
     autoSync: boolean;
     lastSyncedAt?: string;
   };

@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Account, AppDataBackup, AppSettings, Transaction, UserProfile } from './core/types';
+import { Account, AppDataBackup, AppSettings, Transaction, UserProfile, NavTabId } from './core/types';
 import { AppDatabase } from './storage/db';
 import { generateTrialBalance } from './core/accounting';
-import { CloudflareSyncClient } from './storage/cloudflare';
-import { AuthService } from './storage/auth';
+import { GoogleAuthService } from './storage/googleAuth';
+import { GoogleDriveSyncService } from './storage/googleDrive';
 import { Navigation, ActiveTab } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { JournalView } from './components/JournalView';
 import { AccountsView } from './components/AccountsView';
 import { ReportsView } from './components/ReportsView';
 import { BankReconciliationView } from './components/BankReconciliationView';
+import { SettingsView } from './components/SettingsView';
 import { TransactionModal } from './components/TransactionModal';
-import { BackupSyncModal } from './components/BackupSyncModal';
-import { AuthModal } from './components/AuthModal';
+import { FloatingRecordButton } from './components/FloatingRecordButton';
 
 export function App() {
   const [accounts, setAccounts] = useState<Account[]>(() => AppDatabase.loadAccounts());
@@ -21,11 +21,9 @@ export function App() {
   );
   const [settings, setSettings] = useState<AppSettings>(() => AppDatabase.loadSettings());
 
-  // User Authentication State
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => AuthService.getCurrentSession().user);
-  const [authToken, setAuthToken] = useState<string | null>(() => AuthService.getCurrentSession().token);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(
-    () => !AuthService.getCurrentSession().user && !AppDatabase.loadSettings().auth?.isGuest
+  // User Authentication State (Native Google Account or Guest)
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() =>
+    GoogleAuthService.getCurrentUser()
   );
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -33,12 +31,7 @@ export function App() {
   // Transaction Modal State
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-  const [txModalMode, setTxModalMode] = useState<'expense' | 'income' | 'transfer' | 'journal'>(
-    'expense'
-  );
-
-  // Backup & Sync Modal State
-  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [txModalMode, setTxModalMode] = useState<'expense' | 'income' | 'transfer' | 'journal'>('expense');
 
   // Synchronize state changes to local-first database
   useEffect(() => {
@@ -59,6 +52,32 @@ export function App() {
     document.body.className = isLight ? 'theme-light' : 'theme-dark';
   }, [settings.theme]);
 
+  // Dynamic Font Size Scaling (System Default vs. Custom Scale)
+  useEffect(() => {
+    const size = settings.fontSize || 'default';
+    if (size === 'small') {
+      document.documentElement.style.fontSize = '14px';
+    } else if (size === 'normal') {
+      document.documentElement.style.fontSize = '16px';
+    } else if (size === 'large') {
+      document.documentElement.style.fontSize = '18.4px';
+    } else if (size === 'xlarge') {
+      document.documentElement.style.fontSize = '20.8px';
+    } else {
+      // 'default' follows system font size
+      document.documentElement.style.fontSize = '';
+    }
+  }, [settings.fontSize]);
+
+  // Auto-Sync to Google Drive when transactions or accounts change
+  useEffect(() => {
+    if (!settings.googleSync?.autoSync || !currentUser) return;
+    const timer = setTimeout(() => {
+      GoogleDriveSyncService.backupToGoogleDrive(accounts, transactions, settings);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [transactions, accounts, settings.googleSync?.autoSync, currentUser]);
+
   // Check trial balance for books balance verification
   const trialBalance = generateTrialBalance(accounts, transactions);
 
@@ -78,40 +97,132 @@ export function App() {
     setIsTxModalOpen(true);
   };
 
+  // Undo state for updated transaction
+  const [undoUpdateInfo, setUndoUpdateInfo] = useState<{ prevTx: Transaction; currentTx: Transaction } | null>(null);
+
   // Save transaction (Create or Update)
   const handleSaveTransaction = (savedTx: Transaction) => {
     let updatedTransactions: Transaction[];
-
     if (editingTx) {
+      setUndoUpdateInfo({ prevTx: editingTx, currentTx: savedTx });
       updatedTransactions = transactions.map((t) => (t.id === savedTx.id ? savedTx : t));
     } else {
       updatedTransactions = [savedTx, ...transactions];
     }
-
     setTransactions(updatedTransactions);
+  };
 
-    // Optional background auto-sync to Cloudflare
-    if (
-      settings.cloudSync?.autoSync &&
-      settings.cloudSync?.workerUrl &&
-      settings.cloudSync?.secretKey
-    ) {
-      CloudflareSyncClient.pushToCloud(
-        settings.cloudSync.workerUrl,
-        settings.cloudSync.secretKey,
-        accounts,
-        updatedTransactions,
-        settings
-      ).catch((err) => {
-        console.warn('Auto-sync background warning:', err);
-      });
+  // Undo transaction update
+  const handleUndoUpdate = () => {
+    if (undoUpdateInfo) {
+      setTransactions(transactions.map((t) => (t.id === undoUpdateInfo.currentTx.id ? undoUpdateInfo.prevTx : t)));
+      setUndoUpdateInfo(null);
     }
   };
 
-  // Delete transaction
+  // Helper: When transactions are deleted in Ledger, mark associated bank feed items as unreconciled so they show up in Feeds again
+  const syncUnreconcileBankFeedSession = (deletedTxs: Transaction[]) => {
+    try {
+      const raw = localStorage.getItem('finance_bank_feed_session_v2');
+      if (!raw) return;
+      const session = JSON.parse(raw);
+      if (!session?.statementLines || !Array.isArray(session.statementLines)) return;
+
+      const deletedIds = new Set(deletedTxs.map((t) => t.id));
+      const deletedLineIds = new Set(
+        deletedTxs
+          .map((t) => t.meta?.reconciledFromLineId)
+          .filter((id): id is string => Boolean(id))
+      );
+
+      let changed = false;
+      session.statementLines = session.statementLines.map((line: any) => {
+        if (
+          line.status === 'reconciled' &&
+          (deletedIds.has(line.reconciledTxId) || deletedLineIds.has(line.id))
+        ) {
+          changed = true;
+          return {
+            ...line,
+            status: 'unreconciled',
+            reconciledTxId: undefined,
+          };
+        }
+        return line;
+      });
+
+      if (changed) {
+        localStorage.setItem('finance_bank_feed_session_v2', JSON.stringify(session));
+      }
+    } catch (e) {
+      console.warn('Could not sync bank feed session on tx deletion', e);
+    }
+  };
+
+  // Helper: When transactions are restored via Undo in Ledger, re-mark associated bank feed items as reconciled
+  const syncRestoreBankFeedSession = (restoredTxs: Transaction[]) => {
+    try {
+      const raw = localStorage.getItem('finance_bank_feed_session_v2');
+      if (!raw) return;
+      const session = JSON.parse(raw);
+      if (!session?.statementLines || !Array.isArray(session.statementLines)) return;
+
+      let changed = false;
+      session.statementLines = session.statementLines.map((line: any) => {
+        const matchingTx = restoredTxs.find(
+          (t) =>
+            (t.meta?.reconciledFromLineId && t.meta.reconciledFromLineId === line.id) ||
+            line.reconciledTxId === t.id
+        );
+        if (matchingTx && line.status === 'unreconciled') {
+          changed = true;
+          return {
+            ...line,
+            status: 'reconciled',
+            reconciledTxId: matchingTx.id,
+          };
+        }
+        return line;
+      });
+
+      if (changed) {
+        localStorage.setItem('finance_bank_feed_session_v2', JSON.stringify(session));
+      }
+    } catch (e) {
+      console.warn('Could not sync bank feed session on tx restore', e);
+    }
+  };
+
+  // Delete single transaction
   const handleDeleteTransaction = (txId: string) => {
+    const deletedTx = transactions.find((t) => t.id === txId);
     const updated = transactions.filter((t) => t.id !== txId);
     setTransactions(updated);
+    if (deletedTx) {
+      syncUnreconcileBankFeedSession([deletedTx]);
+    }
+  };
+
+  // Delete multiple transactions
+  const handleDeleteMultipleTransactions = (txIds: string[]) => {
+    const deletedTxs = transactions.filter((t) => txIds.includes(t.id));
+    const updated = transactions.filter((t) => !txIds.includes(t.id));
+    setTransactions(updated);
+    if (deletedTxs.length > 0) {
+      syncUnreconcileBankFeedSession(deletedTxs);
+    }
+  };
+
+  // Restore deleted transactions
+  const handleRestoreTransactions = (txsToRestore: Transaction[]) => {
+    const restoredMap = new Map<string, Transaction>();
+    transactions.forEach((t) => restoredMap.set(t.id, t));
+    txsToRestore.forEach((t) => restoredMap.set(t.id, t));
+    const merged = Array.from(restoredMap.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    setTransactions(merged);
+    syncRestoreBankFeedSession(txsToRestore);
   };
 
   // Add custom account to Chart of Accounts
@@ -119,7 +230,7 @@ export function App() {
     setAccounts([...accounts, newAcc]);
   };
 
-  // Restore entire data from file or cloud backup
+  // Restore entire data from file or Google backup
   const handleRestoreData = (backup: AppDataBackup) => {
     setAccounts(backup.accounts);
     setTransactions(backup.transactions);
@@ -128,99 +239,15 @@ export function App() {
     }
   };
 
-  // Reset to initial demo data
-  const handleResetDemo = () => {
-    const res = AppDatabase.resetToDemo();
-    setAccounts(res.accounts);
-    setTransactions(res.transactions);
-    setSettings(res.settings);
-  };
-
-  // Clear all data
-  const handleClearAll = () => {
-    const res = AppDatabase.clearAll();
-    setAccounts(res.accounts);
-    setTransactions(res.transactions);
-    setSettings(res.settings);
-  };
-
-  // Save Reconciled Transactions from Bank Feed (Batch or Single)
+  // Save Reconciled Transactions from Bank Feed
   const handleSaveReconciledTransactions = (newTxs: Transaction[]) => {
     const updated = [...newTxs, ...transactions];
     setTransactions(updated);
-
-    // Optional background auto-sync to Cloudflare
-    if (
-      settings.cloudSync?.autoSync &&
-      settings.cloudSync?.workerUrl &&
-      (settings.cloudSync?.secretKey || authToken)
-    ) {
-      CloudflareSyncClient.pushToCloud(
-        settings.cloudSync.workerUrl,
-        settings.cloudSync.secretKey || authToken || '',
-        accounts,
-        updated,
-        settings
-      ).catch(() => {});
-    }
-  };
-
-  // Authentication Handlers
-  const handleAuthSuccess = (user: UserProfile, token: string) => {
-    setCurrentUser(user);
-    setAuthToken(token);
-    setIsAuthModalOpen(false);
-
-    const updatedSettings: AppSettings = {
-      ...settings,
-      auth: { user, token, isGuest: false },
-    };
-    setSettings(updatedSettings);
-
-    // Auto-pull user's remote cloud vault if Cloudflare is configured
-    if (updatedSettings.cloudSync?.workerUrl) {
-      CloudflareSyncClient.pullFromCloud(updatedSettings.cloudSync.workerUrl, token)
-        .then((res) => {
-          if (res.success && res.data) {
-            setAccounts(res.data.accounts);
-            setTransactions(res.data.transactions);
-            if (res.data.settings) setSettings(res.data.settings);
-          }
-        })
-        .catch(() => {});
-    }
-  };
-
-  const handleLogout = () => {
-    AuthService.logout();
-    setCurrentUser(null);
-    setAuthToken(null);
-    setSettings((prev) => ({
-      ...prev,
-      auth: { user: null, token: null, isGuest: false },
-    }));
-    setIsAuthModalOpen(true);
-  };
-
-  const handleContinueAsGuest = () => {
-    setIsAuthModalOpen(false);
-    setSettings((prev) => ({
-      ...prev,
-      auth: { user: null, token: null, isGuest: true },
-    }));
-  };
-
-  // Toggle Day / Night Theme
-  const handleToggleTheme = () => {
-    const nextTheme = settings.theme === 'light' ? 'dark' : 'light';
-    const updated: AppSettings = {
-      ...settings,
-      theme: nextTheme,
-    };
-    setSettings(updated);
   };
 
   const isLight = settings.theme === 'light';
+  const tabPosition = settings.tabPosition || 'bottom';
+  const mainPadding = tabPosition === 'bottom' ? 'pt-3 pb-28' : 'pt-2 pb-12';
 
   return (
     <div
@@ -228,22 +255,17 @@ export function App() {
         isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#080c14] text-slate-100'
       }`}
     >
-      {/* Top Sticky Navigation */}
-      <Navigation
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenTransactionModal={handleOpenTransactionModal}
-        onOpenBackupModal={() => setIsBackupModalOpen(true)}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onLogout={handleLogout}
-        onToggleTheme={handleToggleTheme}
-        currentUser={currentUser}
-        settings={settings}
-        trialBalanceBalanced={trialBalance.isBalanced}
-      />
+      {/* If Tab Position is configured as Top, render here */}
+      {tabPosition === 'top' && (
+        <Navigation
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          settings={settings}
+        />
+      )}
 
-      {/* Main App Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      {/* Main App Body - Without Top App Name Bar */}
+      <main className={`flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 ${mainPadding}`}>
         {activeTab === 'dashboard' && (
           <Dashboard
             accounts={accounts}
@@ -251,7 +273,8 @@ export function App() {
             settings={settings}
             onOpenTransactionModal={handleOpenTransactionModal}
             onSelectTransactionToEdit={handleSelectTransactionToEdit}
-            onNavigateToTab={setActiveTab}
+            onNavigateToTab={(tab) => setActiveTab(tab as NavTabId)}
+            onUpdateSettings={setSettings}
           />
         )}
 
@@ -262,6 +285,10 @@ export function App() {
             settings={settings}
             onEditTransaction={handleSelectTransactionToEdit}
             onDeleteTransaction={handleDeleteTransaction}
+            onDeleteMultipleTransactions={handleDeleteMultipleTransactions}
+            onRestoreTransactions={handleRestoreTransactions}
+            undoUpdateInfo={undoUpdateInfo}
+            onUndoUpdate={handleUndoUpdate}
             onOpenNewTransaction={() => handleOpenTransactionModal('journal')}
           />
         )}
@@ -269,6 +296,7 @@ export function App() {
         {activeTab === 'reconcile' && (
           <BankReconciliationView
             accounts={accounts}
+            transactions={transactions}
             settings={settings}
             onSaveTransactions={handleSaveReconciledTransactions}
             onUpdateSettings={setSettings}
@@ -281,6 +309,7 @@ export function App() {
             transactions={transactions}
             settings={settings}
             onAddAccount={handleAddAccount}
+            onUpdateSettings={setSettings}
           />
         )}
 
@@ -291,25 +320,35 @@ export function App() {
             settings={settings}
           />
         )}
+
+        {activeTab === 'settings' && (
+          <SettingsView
+            settings={settings}
+            onUpdateSettings={setSettings}
+            currentUser={currentUser}
+            onUpdateUser={setCurrentUser}
+            accounts={accounts}
+            transactions={transactions}
+            onRestoreData={handleRestoreData}
+            trialBalanceBalanced={trialBalance.isBalanced}
+          />
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800/60 bg-slate-950/80 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p>
-            Antigravity Double-Entry Ledger Wallet • Deployable on <strong>GitHub Pages</strong> &{' '}
-            <strong>Cloudflare Workers</strong>
-          </p>
-          <div className="flex items-center gap-3 text-slate-400">
-            <button
-              onClick={() => setIsBackupModalOpen(true)}
-              className="hover:text-indigo-400 underline transition-colors"
-            >
-              Backup & Sync
-            </button>
-          </div>
-        </div>
-      </footer>
+      {/* Floating Action Button (+ Record) at Bottom Right */}
+      <FloatingRecordButton
+        onOpenModal={handleOpenTransactionModal}
+        tabPosition={tabPosition}
+      />
+
+      {/* If Tab Position is configured as Bottom (default), render here */}
+      {tabPosition === 'bottom' && (
+        <Navigation
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          settings={settings}
+        />
+      )}
 
       {/* Transaction Entry & Edit Modal */}
       <TransactionModal
@@ -320,32 +359,10 @@ export function App() {
         editingTransaction={editingTx}
         initialMode={txModalMode}
         currencySymbol={settings.currencySymbol || '$'}
-      />
-
-      {/* Backup & Cloudflare Sync Modal */}
-      <BackupSyncModal
-        isOpen={isBackupModalOpen}
-        onClose={() => setIsBackupModalOpen(false)}
-        accounts={accounts}
-        transactions={transactions}
-        settings={settings}
-        onRestoreData={handleRestoreData}
-        onUpdateSettings={setSettings}
-        onResetDemo={handleResetDemo}
-        onClearAll={handleClearAll}
-      />
-
-      {/* Bank-Grade Authentication & Vault Gate Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={handleAuthSuccess}
-        onContinueAsGuest={handleContinueAsGuest}
-        workerUrl={settings.cloudSync?.workerUrl}
+        baseCurrency={settings.baseCurrency || 'USD'}
       />
     </div>
   );
 }
 
 export default App;
-
