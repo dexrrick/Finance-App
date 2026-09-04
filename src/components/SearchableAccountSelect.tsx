@@ -281,7 +281,7 @@ export const SearchableAccountSelect: React.FC<SearchableAccountSelectProps> = (
                       <span
                         className={`font-mono font-bold text-[11px] px-1.5 py-0.5 rounded shrink-0 ${
                           isSelected
-                            ? 'bg-indigo-600 text-white'
+                            ? 'bg-indigo-600 !text-white text-white'
                             : isLight
                             ? 'bg-slate-200 text-slate-800'
                             : 'bg-slate-800 text-slate-300'

@@ -173,9 +173,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const renderEquationStatus = () => (
     <div
       key="equation_status"
-      className={`border rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm transition-all ${
+      className={`border rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all ${
         isLight
-          ? 'bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/80 border-indigo-100 text-slate-900'
+          ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
           : 'bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border-slate-800 text-white shadow-xl'
       }`}
     >
@@ -183,7 +183,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div
           className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
             isLight
-              ? 'bg-indigo-100/70 border-indigo-200 text-indigo-600'
+              ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
               : 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
           }`}
         >
@@ -197,7 +197,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {balanceSheet.isBalanced ? (
               <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
                 isLight
-                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                   : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
               }`}>
                 <CheckCircle2 className="w-3 h-3" /> Balanced
@@ -205,7 +205,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             ) : (
               <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
                 isLight
-                  ? 'bg-rose-100 text-rose-800 border-rose-200'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
                   : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
               }`}>
                 <AlertCircle className="w-3 h-3" /> Discrepancy
@@ -223,72 +223,106 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 
   const renderNetWorth = () => (
-    <div key="net_worth" className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 relative overflow-hidden shadow-lg">
-      <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+    <div
+      key="net_worth"
+      className={`border rounded-2xl p-4 relative overflow-hidden transition-all ${
+        isLight
+          ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
+          : 'bg-slate-900/90 border-slate-800 text-white shadow-lg'
+      }`}
+    >
+      <div className={`flex items-center justify-between text-xs font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
         <span>Net Worth</span>
-        <Wallet className="w-4 h-4 text-indigo-400" />
+        <Wallet className={`w-4 h-4 ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`} />
       </div>
       <div className="mt-2.5">
-        <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight ${netWorth >= 0 ? 'text-white' : 'text-rose-400'}`}>
+        <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight ${
+          netWorth >= 0 ? (isLight ? 'text-slate-900' : 'text-white') : (isLight ? 'text-rose-600' : 'text-rose-400')
+        }`}>
           {formatCurrency(netWorth, currency)}
         </span>
       </div>
-      <div className="mt-1.5 text-[11px] text-slate-400">
+      <div className={`mt-1.5 text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
         Total Assets − Total Liabilities
       </div>
     </div>
   );
 
   const renderTotalAssets = () => (
-    <div key="total_assets" className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 relative overflow-hidden shadow-lg">
-      <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+    <div
+      key="total_assets"
+      className={`border rounded-2xl p-4 relative overflow-hidden transition-all ${
+        isLight
+          ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
+          : 'bg-slate-900/90 border-slate-800 text-white shadow-lg'
+      }`}
+    >
+      <div className={`flex items-center justify-between text-xs font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
         <span>Total Assets</span>
-        <TrendingUp className="w-4 h-4 text-emerald-400" />
+        <TrendingUp className={`w-4 h-4 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
       </div>
       <div className="mt-2.5">
-        <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-400 tracking-tight">
+        <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`}>
           {formatCurrency(balanceSheet.totalAssets, currency)}
         </span>
       </div>
-      <div className="mt-1.5 text-[11px] text-slate-400">
+      <div className={`mt-1.5 text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
         Liquid Cash: {formatCurrency(totalLiquid, currency)}
       </div>
     </div>
   );
 
   const renderTotalLiabilities = () => (
-    <div key="total_liabilities" className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 relative overflow-hidden shadow-lg">
-      <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+    <div
+      key="total_liabilities"
+      className={`border rounded-2xl p-4 relative overflow-hidden transition-all ${
+        isLight
+          ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
+          : 'bg-slate-900/90 border-slate-800 text-white shadow-lg'
+      }`}
+    >
+      <div className={`flex items-center justify-between text-xs font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
         <span>Total Liabilities</span>
-        <CreditCard className="w-4 h-4 text-rose-400" />
+        <CreditCard className={`w-4 h-4 ${isLight ? 'text-rose-600' : 'text-rose-400'}`} />
       </div>
       <div className="mt-2.5">
-        <span className="text-xl sm:text-2xl font-bold font-mono text-rose-400 tracking-tight">
+        <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight ${isLight ? 'text-rose-600' : 'text-rose-400'}`}>
           {formatCurrency(balanceSheet.totalLiabilities, currency)}
         </span>
       </div>
-      <div className="mt-1.5 text-[11px] text-slate-400">
+      <div className={`mt-1.5 text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
         Credit cards & personal loans
       </div>
     </div>
   );
 
   const renderNetIncome = () => (
-    <div key="net_income" className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 relative overflow-hidden shadow-lg">
-      <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+    <div
+      key="net_income"
+      className={`border rounded-2xl p-4 relative overflow-hidden transition-all ${
+        isLight
+          ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
+          : 'bg-slate-900/90 border-slate-800 text-white shadow-lg'
+      }`}
+    >
+      <div className={`flex items-center justify-between text-xs font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
         <span>Period Net Income</span>
         {incomeStatement.netIncome >= 0 ? (
-          <TrendingUp className="w-4 h-4 text-emerald-400" />
+          <TrendingUp className={`w-4 h-4 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
         ) : (
-          <TrendingDown className="w-4 h-4 text-rose-400" />
+          <TrendingDown className={`w-4 h-4 ${isLight ? 'text-rose-600' : 'text-rose-400'}`} />
         )}
       </div>
       <div className="mt-2.5">
-        <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight ${incomeStatement.netIncome >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+        <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight ${
+          incomeStatement.netIncome >= 0
+            ? isLight ? 'text-emerald-600' : 'text-emerald-400'
+            : isLight ? 'text-rose-600' : 'text-rose-400'
+        }`}>
           {formatCurrency(incomeStatement.netIncome, currency)}
         </span>
       </div>
-      <div className="mt-1.5 text-[11px] text-slate-400 flex items-center justify-between">
+      <div className={`mt-1.5 text-[11px] flex items-center justify-between ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
         <span>In: {formatCurrency(incomeStatement.totalRevenue, currency)}</span>
         <span>Out: {formatCurrency(incomeStatement.totalExpense, currency)}</span>
       </div>
@@ -311,46 +345,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className="flex flex-wrap items-center gap-1.5">
         <button
           onClick={() => onOpenTransactionModal('expense')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 ${
             isLight
               ? 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
               : 'bg-rose-950/40 hover:bg-rose-900/50 border-rose-500/30 text-rose-300'
           }`}
         >
-          <ArrowDownLeft className="w-3 h-3 text-rose-500" />
+          <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500" />
           Expense
         </button>
         <button
           onClick={() => onOpenTransactionModal('income')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 ${
             isLight
               ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700'
               : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/30 text-emerald-300'
           }`}
         >
-          <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+          <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
           Income
         </button>
         <button
           onClick={() => onOpenTransactionModal('transfer')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 ${
             isLight
               ? 'bg-sky-50 hover:bg-sky-100 border-sky-200 text-sky-700'
               : 'bg-sky-950/40 hover:bg-sky-900/50 border-sky-500/30 text-sky-300'
           }`}
         >
-          <RefreshCw className="w-3 h-3 text-sky-500" />
+          <RefreshCw className="w-3.5 h-3.5 text-sky-500" />
           Transfer
         </button>
         <button
           onClick={() => onOpenTransactionModal('journal')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 ${
             isLight
-              ? 'bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700'
+              ? 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700'
               : 'bg-purple-950/40 hover:bg-purple-900/50 border-purple-500/30 text-purple-300'
           }`}
         >
-          <BookOpen className="w-3 h-3 text-purple-500" />
+          <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
           Journal
         </button>
       </div>
@@ -358,22 +392,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 
   const renderRecentTransactions = () => (
-    <div key="recent_transactions" className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl">
+    <div
+      key="recent_transactions"
+      className={`border rounded-2xl p-4 sm:p-5 transition-all ${
+        isLight
+          ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
+          : 'bg-slate-900/90 border-slate-800 text-white shadow-xl'
+      }`}
+    >
       <div className="flex items-center justify-between mb-3.5">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-indigo-400" />
+        <h3 className={`text-sm font-bold flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+          <BookOpen className="w-4 h-4 text-indigo-500" />
           Recent Ledger Transactions
         </h3>
         <button
           onClick={() => onNavigateToTab('journal')}
-          className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 transition-colors"
+          className={`text-xs font-medium flex items-center gap-1 transition-colors ${
+            isLight ? 'text-indigo-600 hover:text-indigo-700' : 'text-indigo-400 hover:text-indigo-300'
+          }`}
         >
           View All <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {recentTransactions.length === 0 ? (
-        <div className="py-8 text-center text-slate-500 text-xs">
+        <div className={`py-8 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
           No transactions recorded yet. Tap <strong>+</strong> to post your first entry!
         </div>
       ) : (
@@ -392,18 +435,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div
                 key={tx.id}
                 onClick={() => onSelectTransactionToEdit(tx)}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/60 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition-all group"
+                className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all group ${
+                  isLight
+                    ? 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 text-slate-900'
+                    : 'bg-slate-950/60 hover:bg-slate-800/60 border-slate-800/80 text-white'
+                }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                       isIncome
-                        ? 'bg-emerald-500/20 text-emerald-400'
+                        ? isLight ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-500/20 text-emerald-400'
                         : isExpense
-                        ? 'bg-rose-500/20 text-rose-400'
+                        ? isLight ? 'bg-rose-100 text-rose-700' : 'bg-rose-500/20 text-rose-400'
                         : isTransfer
-                        ? 'bg-sky-500/20 text-sky-400'
-                        : 'bg-purple-500/20 text-purple-400'
+                        ? isLight ? 'bg-sky-100 text-sky-700' : 'bg-sky-500/20 text-sky-400'
+                        : isLight ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-500/20 text-purple-400'
                     }`}
                   >
                     {isIncome ? (
@@ -418,7 +465,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-200 truncate group-hover:text-indigo-300 transition-colors">
+                    <p className={`text-xs font-semibold truncate transition-colors ${
+                      isLight ? 'text-slate-900 group-hover:text-indigo-600' : 'text-slate-200 group-hover:text-indigo-300'
+                    }`}>
                       {tx.description}
                     </p>
                     <p className="text-[10px] text-slate-500">
@@ -430,7 +479,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="text-right shrink-0 ml-2">
                   <span
                     className={`text-xs font-bold font-mono ${
-                      isIncome ? 'text-emerald-400' : isExpense ? 'text-rose-400' : 'text-slate-200'
+                      isIncome
+                        ? isLight ? 'text-emerald-600' : 'text-emerald-400'
+                        : isExpense
+                        ? isLight ? 'text-rose-600' : 'text-rose-400'
+                        : isLight ? 'text-slate-900' : 'text-slate-200'
                     }`}
                   >
                     {isExpense ? '-' : isIncome ? '+' : ''}
@@ -446,10 +499,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 
   const renderExpenseBreakdown = () => (
-    <div key="expense_breakdown" className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl">
-      <h3 className="text-sm font-bold text-white mb-3 flex items-center justify-between">
+    <div
+      key="expense_breakdown"
+      className={`border rounded-2xl p-4 sm:p-5 transition-all ${
+        isLight
+          ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
+          : 'bg-slate-900/90 border-slate-800 text-white shadow-xl'
+      }`}
+    >
+      <h3 className={`text-sm font-bold mb-3 flex items-center justify-between ${isLight ? 'text-slate-900' : 'text-white'}`}>
         <span>Top Expense Outflows</span>
-        <span className="text-xs text-slate-400 font-normal">By Category</span>
+        <span className={`text-xs font-normal ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>By Category</span>
       </h3>
 
       {expenseBreakdown.length === 0 ? (
@@ -463,14 +523,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             return (
               <div key={account.id} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-slate-300 truncate max-w-[160px]">
+                  <span className={`font-medium truncate max-w-[160px] ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
                     {account.name}
                   </span>
-                  <span className="font-mono font-semibold text-rose-400 text-xs">
+                  <span className={`font-mono font-semibold text-xs ${isLight ? 'text-rose-600' : 'text-rose-400'}`}>
                     {formatCurrency(balance, currency)}
                   </span>
                 </div>
-                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div className={`w-full h-1.5 rounded-full overflow-hidden ${isLight ? 'bg-slate-100' : 'bg-slate-800'}`}>
                   <div
                     className="bg-gradient-to-r from-rose-500 to-amber-500 h-full rounded-full transition-all duration-500"
                     style={{ width: `${pct}%` }}
@@ -485,12 +545,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
   );
 
   const renderLiquidCash = () => (
-    <div key="liquid_cash" className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl">
+    <div
+      key="liquid_cash"
+      className={`border rounded-2xl p-4 sm:p-5 transition-all ${
+        isLight
+          ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
+          : 'bg-slate-900/90 border-slate-800 text-white shadow-xl'
+      }`}
+    >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-white">Liquid Cash Balances</h3>
+        <h3 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Liquid Cash Balances</h3>
         <button
           onClick={() => onNavigateToTab('accounts')}
-          className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+          className={`text-xs font-medium ${isLight ? 'text-indigo-600 hover:text-indigo-700' : 'text-indigo-400 hover:text-indigo-300'}`}
         >
           Accounts
         </button>
@@ -502,10 +569,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           return (
             <div
               key={acc.id}
-              className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/50 border border-slate-800/80 text-xs"
+              className={`flex items-center justify-between p-2.5 rounded-lg border text-xs ${
+                isLight
+                  ? 'bg-slate-50 border-slate-200/80 text-slate-900'
+                  : 'bg-slate-950/50 border-slate-800/80 text-slate-100'
+              }`}
             >
-              <span className="text-slate-300 font-medium truncate">{acc.name}</span>
-              <span className="font-mono font-bold text-slate-100">
+              <span className={`font-medium truncate ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>{acc.name}</span>
+              <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                 {formatCurrency(bal, currency)}
               </span>
             </div>
@@ -576,16 +647,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Customize Cards Modal */}
       {isCustomizeModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className={`fixed inset-0 z-50 overflow-y-auto backdrop-blur-xs flex items-center justify-center p-4 ${
+          isLight ? 'bg-slate-900/40' : 'bg-slate-950/80'
+        }`}>
+          <div className={`border rounded-2xl w-full max-w-md shadow-2xl p-5 space-y-4 ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+          }`}>
+            <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-100' : 'border-slate-800'}`}>
               <div>
-                <h3 className="font-bold text-white text-base">Customize Display Cards</h3>
-                <p className="text-xs text-slate-400">Drag items to reorder, or toggle cards on your Home screen</p>
+                <h3 className={`font-bold text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>Customize Display Cards</h3>
+                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Drag items to reorder, or toggle cards on your Home screen</p>
               </div>
               <button
                 onClick={() => setIsCustomizeModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className={`p-1 rounded-lg transition-colors ${isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' : 'text-slate-400 hover:text-white'}`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -603,20 +678,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   style={{ touchAction: 'none' }}
                   className={`flex items-center justify-between p-2.5 rounded-xl border text-xs select-none transition-all duration-150 ${
                     activeDragCardIndex === idx
-                      ? 'scale-[1.03] shadow-2xl z-30 ring-2 ring-indigo-500 bg-slate-800 border-indigo-400 cursor-grabbing'
+                      ? isLight
+                        ? 'scale-[1.03] shadow-2xl z-30 ring-2 ring-indigo-500 bg-white border-indigo-400 cursor-grabbing'
+                        : 'scale-[1.03] shadow-2xl z-30 ring-2 ring-indigo-500 bg-slate-800 border-indigo-400 cursor-grabbing'
+                      : isLight
+                      ? 'cursor-grab hover:border-slate-300'
                       : 'cursor-grab hover:border-slate-600'
                   } ${
                     card.enabled
-                      ? 'bg-slate-800/80 border-slate-700 text-slate-200'
+                      ? isLight
+                        ? 'bg-slate-50 border-slate-200 text-slate-800'
+                        : 'bg-slate-800/80 border-slate-700 text-slate-200'
+                      : isLight
+                      ? 'opacity-50 bg-slate-100/70 border-slate-200 text-slate-400'
                       : 'opacity-50 bg-slate-950/40 border-slate-800 text-slate-500'
                   }`}
                 >
                   <div className="flex items-center gap-2 pointer-events-none">
-                    <span className="text-slate-500 hover:text-slate-300 p-0.5" title="Hold and drag to reorder">
-                      <GripVertical className="w-4 h-4 text-indigo-400" />
+                    <span className="p-0.5" title="Hold and drag to reorder">
+                      <GripVertical className="w-4 h-4 text-indigo-500" />
                     </span>
-                    <span className="w-4 font-mono text-[10px] text-slate-500">#{idx + 1}</span>
-                    <span className="font-medium">{card.label}</span>
+                    <span className="w-4 font-mono text-[10px] opacity-60">#{idx + 1}</span>
+                    <span className="font-semibold">{card.label}</span>
                   </div>
 
                   <div className="flex items-center gap-1.5 pointer-events-auto">
@@ -624,7 +707,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       disabled={idx === 0}
                       onClick={() => handleMoveCardUp(idx)}
                       title="Move Up"
-                      className="p-1 rounded bg-slate-700/50 hover:bg-slate-700 text-slate-300 disabled:opacity-30 active:scale-95"
+                      className={`p-1 rounded disabled:opacity-30 active:scale-95 transition-colors ${
+                        isLight ? 'bg-slate-200/80 hover:bg-slate-300 text-slate-700' : 'bg-slate-700/50 hover:bg-slate-700 text-slate-300'
+                      }`}
                     >
                       <ChevronUp className="w-3.5 h-3.5" />
                     </button>
@@ -632,15 +717,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       disabled={idx === cardsConfig.length - 1}
                       onClick={() => handleMoveCardDown(idx)}
                       title="Move Down"
-                      className="p-1 rounded bg-slate-700/50 hover:bg-slate-700 text-slate-300 disabled:opacity-30 active:scale-95"
+                      className={`p-1 rounded disabled:opacity-30 active:scale-95 transition-colors ${
+                        isLight ? 'bg-slate-200/80 hover:bg-slate-300 text-slate-700' : 'bg-slate-700/50 hover:bg-slate-700 text-slate-300'
+                      }`}
                     >
                       <ChevronDown className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleToggleCard(card.id)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors active:scale-95 ${
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors active:scale-95 ${
                         card.enabled
-                          ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
+                          ? isLight
+                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                            : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
+                          : isLight
+                          ? 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                           : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                       }`}
                     >
@@ -661,17 +752,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
               ))}
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+            <div className={`flex items-center justify-between pt-3 border-t ${isLight ? 'border-slate-100' : 'border-slate-800'}`}>
               <button
                 onClick={handleResetCards}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200"
+                className={`flex items-center gap-1 text-xs transition-colors ${isLight ? 'text-slate-500 hover:text-slate-800' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset to Default</span>
               </button>
               <button
                 onClick={() => setIsCustomizeModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 !text-white text-white shadow-md shadow-indigo-600/30 transition-all active:scale-95"
               >
                 Done
               </button>

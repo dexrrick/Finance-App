@@ -321,7 +321,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {currentUser ? (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-slate-800/40">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base shadow">
+              <div className="w-10 h-10 rounded-full bg-indigo-600 !text-white text-white flex items-center justify-center font-bold text-base shadow">
                 {currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'G'}
               </div>
               <div>
@@ -443,7 +443,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onClick={handleRestoreFromGoogleDrive}
             className={`flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl text-xs font-semibold border transition-all ${
               currentUser
-                ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500 shadow'
+                ? 'bg-indigo-600 hover:bg-indigo-500 !text-white text-white border-indigo-500 shadow'
                 : 'opacity-50 cursor-not-allowed bg-slate-800 text-slate-400 border-slate-700'
             }`}
             disabled={!currentUser}
@@ -633,7 +633,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsLockConfirmOpen(true)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md transition-all active:scale-95 shrink-0 flex items-center justify-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-bold !text-white text-white bg-indigo-600 hover:bg-indigo-500 shadow-md transition-all active:scale-95 shrink-0 flex items-center justify-center gap-1.5"
               >
                 <Lock className="w-3.5 h-3.5" />
                 <span>Set & Lock Currency</span>
@@ -682,7 +682,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={handleConfirmLockBaseCurrency}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-bold !text-white text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-1.5"
               >
                 <Lock className="w-3.5 h-3.5" />
                 <span>Confirm & Lock Permanently</span>
@@ -727,7 +727,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={handleConfirmLoadSample}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-bold !text-white text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Load Sample Ledger</span>
@@ -765,7 +765,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onClick={() => handleTabPositionChange('bottom')}
               className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
                 (settings.tabPosition || 'bottom') === 'bottom'
-                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-md font-semibold'
+                  ? 'bg-indigo-600 !text-white text-white border-indigo-500 shadow-md font-semibold'
                   : isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-400 border-slate-700'
               }`}
             >
@@ -777,7 +777,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onClick={() => handleTabPositionChange('top')}
               className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
                 settings.tabPosition === 'top'
-                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-md font-semibold'
+                  ? 'bg-indigo-600 !text-white text-white border-indigo-500 shadow-md font-semibold'
                   : isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-400 border-slate-700'
               }`}
             >
@@ -944,7 +944,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => handleThemeToggle('dark')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                !isLight ? 'bg-indigo-600 text-white border-indigo-500 shadow' : 'bg-slate-100 text-slate-700 border-slate-200'
+                !isLight ? 'bg-indigo-600 !text-white text-white border-indigo-500 shadow' : 'bg-slate-100 text-slate-700 border-slate-200'
               }`}
             >
               <Moon className="w-3.5 h-3.5 text-indigo-200" />

@@ -371,6 +371,7 @@ export function App() {
         initialMode={txModalMode}
         currencySymbol={settings.currencySymbol || '$'}
         baseCurrency={settings.baseCurrency || 'USD'}
+        theme={settings.theme}
       />
     </div>
   );

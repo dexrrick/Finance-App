@@ -96,13 +96,13 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Add Transaction"
-        className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-200 active:scale-90 ${
+        className={`w-14 h-14 rounded-full flex items-center justify-center !text-white text-white shadow-2xl transition-all duration-200 active:scale-90 ${
           isOpen
             ? 'bg-slate-800 border-2 border-slate-600 rotate-90'
             : 'bg-gradient-to-tr from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-indigo-600/40'
         }`}
       >
-        {isOpen ? <X className="w-6 h-6 text-slate-300" /> : <Plus className="w-7 h-7 stroke-[2.5]" />}
+        {isOpen ? <X className="w-6 h-6 text-slate-300" /> : <Plus className="w-7 h-7 stroke-[2.5] !text-white text-white stroke-white" />}
       </button>
       </div>
     </div>

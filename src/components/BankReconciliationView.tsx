@@ -624,9 +624,9 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <label className="cursor-pointer px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              <span>Select Bank CSV File</span>
+            <label className="cursor-pointer px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 !text-white text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center gap-2">
+              <Upload className="w-4 h-4 !text-white stroke-white" />
+              <span className="!text-white text-white">Select Bank CSV File</span>
               <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileUpload} className="hidden" />
             </label>
 
@@ -734,7 +734,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               onClick={() => setFilterStatus('unreconciled')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 filterStatus === 'unreconciled'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-indigo-600 !text-white text-white shadow-sm'
                   : 'text-slate-400 hover:text-white bg-slate-950/60'
               }`}
             >
@@ -745,7 +745,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               onClick={() => setFilterStatus('reconciled')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 filterStatus === 'reconciled'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-indigo-600 !text-white text-white shadow-sm'
                   : 'text-slate-400 hover:text-white bg-slate-950/60'
               }`}
             >
@@ -756,7 +756,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               onClick={() => setFilterStatus('all')}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 filterStatus === 'all'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-indigo-600 !text-white text-white shadow-sm'
                   : 'text-slate-400 hover:text-white bg-slate-950/60'
               }`}
             >
@@ -891,14 +891,14 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleReconcileLine(line)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 ${
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 !text-white text-white ${
                             line.suggestedAccountId
-                              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
-                              : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
+                              ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+                              : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20'
                           }`}
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Approve</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 !text-white stroke-white" />
+                          <span className="!text-white text-white">Approve</span>
                         </button>
 
                         <button
@@ -1151,7 +1151,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
                   <button
                     type="button"
                     onClick={handleApplyCustomMapping}
-                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md"
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 !text-white text-white rounded-xl text-xs font-bold shadow-md"
                   >
                     Apply & Re-Parse File
                   </button>
@@ -1169,7 +1169,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
                 <ClipboardList className="w-5 h-5 text-indigo-400" />
-                <h3 className="font-bold text-base text-white">Paste Bank Statement CSV Text</h3>
+                <h3 className="font-bold text-base text-white">Paste Bank CSV / Statement Data</h3>
               </div>
               <button onClick={() => setIsPasteModalOpen(false)} className="text-slate-400 hover:text-white p-1">
                 ✕
@@ -1177,18 +1177,18 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
             </div>
 
             <p className="text-xs text-slate-400">
-              Open your CSV file in Notepad or Excel, copy all rows (Ctrl+A then Ctrl+C), and paste below:
+              Paste raw comma-separated (CSV) text copied directly from Excel, Google Sheets, or your online banking statement table:
             </p>
 
             <textarea
-              rows={10}
+              rows={8}
               value={pastedText}
               onChange={(e) => setPastedText(e.target.value)}
-              placeholder="Date,Description,Amount&#10;2026-03-01,EMPLOYER SALARY DIRECT DEP,5000.00&#10;2026-03-02,WHOLE FOODS GROCERIES,-120.50"
+              placeholder="Date,Description,Amount&#10;2025-03-01,Salary Direct Deposit,5000.00&#10;2025-03-02,Starbucks Coffee,-6.50"
               className="w-full p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono text-white focus:border-indigo-500 focus:outline-none"
             />
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setIsPasteModalOpen(false)}
@@ -1199,7 +1199,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               <button
                 type="button"
                 onClick={handleApplyPastedText}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md"
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 !text-white text-white rounded-xl text-xs font-bold shadow-md"
               >
                 Parse & Import
               </button>
@@ -1263,7 +1263,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               <div className="flex justify-end pt-1">
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 !text-white text-white rounded-lg text-xs font-bold transition-all shadow-sm"
                 >
                   Save Rule
                 </button>

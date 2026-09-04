@@ -22,6 +22,7 @@ interface TransactionModalProps {
   initialMode?: 'expense' | 'income' | 'transfer' | 'journal';
   currencySymbol: string;
   baseCurrency?: string;
+  theme?: 'dark' | 'light';
 }
 
 export const TransactionModal: React.FC<TransactionModalProps> = ({
@@ -33,7 +34,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   initialMode = 'expense',
   currencySymbol,
   baseCurrency = 'USD',
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
   // Mode: simple (expense, income, transfer) vs advanced journal (debit/credit)
   const [isAdvanced, setIsAdvanced] = useState<boolean>(initialMode === 'journal');
   const [simpleMode, setSimpleMode] = useState<'expense' | 'income' | 'transfer'>(
@@ -393,14 +396,20 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[80] overflow-y-auto bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transition-all">
+      <div className={`border rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transition-all ${
+        isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+      }`}>
         {/* Header */}
-        <div className="px-4 py-3 sm:px-6 sm:py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60 shrink-0">
+        <div className={`px-4 py-3 sm:px-6 sm:py-3.5 border-b flex items-center justify-between shrink-0 ${
+          isLight ? 'border-slate-200 bg-slate-50/80 text-slate-900' : 'border-slate-800 bg-slate-950/60 text-white'
+        }`}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${
+              isLight ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+            }`}>
               <Scale className="w-4 h-4" />
             </div>
-            <h3 className="font-semibold text-white text-sm sm:text-base">
+            <h3 className={`font-semibold text-sm sm:text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {editingTransaction ? 'Edit Transaction' : isAdvanced ? 'Debit & Credit Entry' : 'Record Transaction'}
             </h3>
           </div>
@@ -410,15 +419,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             <button
               type="button"
               onClick={isAdvanced ? handleSwitchToSimple : handleSwitchToAdvanced}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                isLight
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+              }`}
             >
-              <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+              <Sliders className="w-3.5 h-3.5 text-indigo-500" />
               <span>{isAdvanced ? 'Simple' : 'Debit & Credit'}</span>
             </button>
 
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+              className={`p-1.5 rounded-lg transition-colors ${
+                isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              }`}
             >
               <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -430,7 +445,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           {!isAdvanced ? (
             <div className="space-y-3.5">
               {/* Type Switcher */}
-              <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <div className={`flex p-1 rounded-xl border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
                 <button
                   type="button"
                   onClick={() => {
@@ -439,8 +454,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   }}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                     simpleMode === 'expense'
-                      ? 'bg-rose-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-rose-600 !text-white text-white shadow-sm'
+                      : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   Expense
@@ -453,8 +468,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   }}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                     simpleMode === 'income'
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-emerald-600 !text-white text-white shadow-sm'
+                      : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   Income
@@ -467,8 +482,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   }}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                     simpleMode === 'transfer'
-                      ? 'bg-sky-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-sky-600 !text-white text-white shadow-sm'
+                      : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   Transfer
@@ -477,7 +492,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
               {/* Amount Input with Multi-Currency Selector */}
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-400'
+                }`}>
                   Amount
                 </label>
                 <div className="flex gap-2">
@@ -493,7 +510,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       placeholder="0.00"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-base font-bold text-white focus:outline-none focus:border-indigo-500"
+                      className={`w-full border rounded-xl pl-9 pr-3 py-1.5 text-base font-bold focus:outline-none focus:border-indigo-500 ${
+                        isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                      }`}
                     />
                   </div>
 
@@ -501,7 +520,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   <select
                     value={selectedCurrency}
                     onChange={(e) => handleCurrencyChange(e.target.value)}
-                    className="w-24 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs font-mono font-bold text-white focus:border-indigo-500 outline-none cursor-pointer"
+                    className={`w-24 border rounded-xl px-2 py-1.5 text-xs font-mono font-bold focus:border-indigo-500 outline-none cursor-pointer ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                    }`}
                   >
                     {SUPPORTED_CURRENCIES.map((c) => (
                       <option key={c.code} value={c.code}>
@@ -513,14 +534,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
                 {/* Compact Foreign Currency Conversion Chip */}
                 {selectedCurrency !== baseCurrency && (
-                  <div className="mt-1.5 flex items-center justify-between text-[11px] px-2.5 py-1 rounded-lg bg-indigo-950/40 border border-indigo-500/30">
-                    <span className="text-slate-300">
-                      ≈ <strong className="text-emerald-400 font-mono">{currencySymbol}{(round2((parseFloat(amount) || 0) * exchangeRate)).toFixed(2)}</strong> ({baseCurrency})
+                  <div className={`mt-1.5 flex items-center justify-between text-[11px] px-2.5 py-1 rounded-lg border ${
+                    isLight ? 'bg-indigo-50 border-indigo-200 text-slate-800' : 'bg-indigo-950/40 border-indigo-500/30 text-slate-300'
+                  }`}>
+                    <span>
+                      ≈ <strong className="text-emerald-500 font-mono">{currencySymbol}{(round2((parseFloat(amount) || 0) * exchangeRate)).toFixed(2)}</strong> ({baseCurrency})
                     </span>
                     <button
                       type="button"
                       onClick={() => setIsEditingRate(!isEditingRate)}
-                      className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold underline"
+                      className="text-[10px] text-indigo-500 hover:text-indigo-600 font-semibold underline"
                     >
                       {isEditingRate ? 'Done' : `Rate: ${exchangeRate}`}
                     </button>
@@ -528,20 +551,26 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 )}
 
                 {selectedCurrency !== baseCurrency && isEditingRate && (
-                  <div className="flex items-center gap-2 mt-1.5 p-2 rounded-lg bg-slate-950 border border-indigo-500/20">
-                    <span className="text-[10px] text-slate-400 shrink-0">Custom Rate:</span>
+                  <div className={`flex items-center gap-2 mt-1.5 p-2 rounded-lg border ${
+                    isLight ? 'bg-slate-50 border-indigo-200' : 'bg-slate-950 border-indigo-500/20'
+                  }`}>
+                    <span className={`text-[10px] shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Custom Rate:</span>
                     <input
                       type="number"
                       step="0.0001"
                       min="0.0001"
                       value={customRateInput}
                       onChange={(e) => handleCustomRateChange(e.target.value)}
-                      className="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-white font-mono"
+                      className={`flex-1 border rounded px-2 py-0.5 text-xs font-mono ${
+                        isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={handleResetRate}
-                      className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px]"
+                      className={`px-2.5 py-0.5 rounded text-[10px] transition-colors ${
+                        isLight ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                      }`}
                     >
                       Reset
                     </button>
@@ -552,7 +581,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               {/* Description & Date Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
                     Description
                   </label>
                   <input
@@ -561,12 +592,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     placeholder="e.g., Groceries, Salary, Lunch"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    className={`w-full border rounded-xl px-3 py-1.5 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-950 border-slate-700 text-slate-200 placeholder-slate-500'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
                     Date
                   </label>
                   <input
@@ -574,7 +609,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                    className={`w-full border rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-200'
+                    }`}
                   />
                 </div>
               </div>
@@ -584,13 +621,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 {simpleMode === 'expense' && (
                   <>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                      <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                        isLight ? 'text-slate-700' : 'text-slate-400'
+                      }`}>
                         Category
                       </label>
                       <select
                         value={categoryAccountId}
                         onChange={(e) => setCategoryAccountId(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 truncate"
+                        className={`w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 truncate ${
+                          isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-200'
+                        }`}
                       >
                         <optgroup label="Operating Expenses (5xxx)">
                           {expenseAccounts.map((acc) => (
@@ -612,13 +653,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                      <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                        isLight ? 'text-slate-700' : 'text-slate-400'
+                      }`}>
                         Paid With
                       </label>
                       <select
                         value={paymentAccountId}
                         onChange={(e) => setPaymentAccountId(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 truncate"
+                        className={`w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 truncate ${
+                          isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-200'
+                        }`}
                       >
                         {paymentSources.map((acc) => (
                           <option key={acc.id} value={acc.id}>
@@ -633,13 +678,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 {simpleMode === 'income' && (
                   <>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                      <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                        isLight ? 'text-slate-700' : 'text-slate-400'
+                      }`}>
                         Category
                       </label>
                       <select
                         value={categoryAccountId}
                         onChange={(e) => setCategoryAccountId(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 truncate"
+                        className={`w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 truncate ${
+                          isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-200'
+                        }`}
                       >
                         <optgroup label="Operating Revenues (4xxx)">
                           {revenueAccounts.map((acc) => (
@@ -661,13 +710,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                      <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                        isLight ? 'text-slate-700' : 'text-slate-400'
+                      }`}>
                         Deposit To
                       </label>
                       <select
                         value={paymentAccountId}
                         onChange={(e) => setPaymentAccountId(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 truncate"
+                        className={`w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 truncate ${
+                          isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-200'
+                        }`}
                       >
                         {assetAccounts.map((acc) => (
                           <option key={acc.id} value={acc.id}>
@@ -682,13 +735,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 {simpleMode === 'transfer' && (
                   <>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                      <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                        isLight ? 'text-slate-700' : 'text-slate-400'
+                      }`}>
                         Transfer From
                       </label>
                       <select
                         value={paymentAccountId}
                         onChange={(e) => setPaymentAccountId(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 truncate"
+                        className={`w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 truncate ${
+                          isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-200'
+                        }`}
                       >
                         {assetAccounts.map((acc) => (
                           <option key={acc.id} value={acc.id}>
@@ -699,13 +756,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                      <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                        isLight ? 'text-slate-700' : 'text-slate-400'
+                      }`}>
                         Transfer To
                       </label>
                       <select
                         value={categoryAccountId}
                         onChange={(e) => setCategoryAccountId(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 truncate"
+                        className={`w-full border rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 truncate ${
+                          isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-200'
+                        }`}
                       >
                         {assetAccounts.map((acc) => (
                           <option key={acc.id} value={acc.id}>
@@ -727,7 +788,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       placeholder="Receipt # or invoice note (optional)"
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
-                      className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                      className={`flex-1 border rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
+                        isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-950 border-slate-700 text-slate-200 placeholder-slate-500'
+                      }`}
                     />
                     <button
                       type="button"
@@ -736,7 +799,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         setShowReference(false);
                       }}
                       title="Remove note"
-                      className="text-slate-500 hover:text-slate-300 p-1"
+                      className={`p-1 transition-colors ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -745,7 +808,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowReference(true)}
-                    className="text-[11px] text-slate-500 hover:text-indigo-400 font-medium transition-colors"
+                    className="text-[11px] text-indigo-500 hover:text-indigo-600 font-medium transition-colors"
                   >
                     + Add Receipt / Note (Optional)
                   </button>
@@ -758,7 +821,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               {/* Description & Date Grid for Advanced Mode */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
                     Description / Memo
                   </label>
                   <input
@@ -767,12 +832,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     placeholder="e.g., Monthly Salary, Rent, Adjustments"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    className={`w-full border rounded-xl px-3 py-1.5 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-950 border-slate-700 text-slate-200 placeholder-slate-500'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
                     Date
                   </label>
                   <input
@@ -780,20 +849,26 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                    className={`w-full border rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-200'
+                    }`}
                   />
                 </div>
               </div>
 
               {/* Multi-Currency Selector for Debit & Credit Mode */}
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div className={`p-3 rounded-xl border space-y-2 ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+              }`}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <label className="text-xs font-medium text-slate-400">Currency:</label>
+                    <label className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Currency:</label>
                     <select
                       value={selectedCurrency}
                       onChange={(e) => handleCurrencyChange(e.target.value)}
-                      className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-white focus:border-indigo-500 outline-none cursor-pointer"
+                      className={`border rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold focus:border-indigo-500 outline-none cursor-pointer ${
+                        isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                      }`}
                     >
                       {SUPPORTED_CURRENCIES.map((c) => (
                         <option key={c.code} value={c.code}>
@@ -802,19 +877,23 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       ))}
                     </select>
                     {selectedCurrency !== baseCurrency && (
-                      <span className="text-[10px] text-indigo-400 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                        isLight ? 'text-indigo-700 bg-indigo-50 border-indigo-200' : 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20'
+                      }`}>
                         Multi-Currency ({selectedCurrency})
                       </span>
                     )}
                   </div>
 
                   {selectedCurrency !== baseCurrency && (
-                    <div className="flex items-center gap-2 text-xs text-slate-300">
+                    <div className={`flex items-center gap-2 text-xs ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
                       <span>Rate: 1 {selectedCurrency} = {exchangeRate} {baseCurrency}</span>
                       <button
                         type="button"
                         onClick={() => setIsEditingRate(!isEditingRate)}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline"
+                        className={`text-xs font-semibold underline ${
+                          isLight ? 'text-indigo-600 hover:text-indigo-700' : 'text-indigo-400 hover:text-indigo-300'
+                        }`}
                       >
                         {isEditingRate ? 'Done' : 'Adjust Rate'}
                       </button>
@@ -823,20 +902,24 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 </div>
 
                 {selectedCurrency !== baseCurrency && isEditingRate && (
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
-                    <span className="text-[11px] text-slate-400 shrink-0">Custom Rate:</span>
+                  <div className={`flex items-center gap-2 pt-2 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
+                    <span className={`text-[11px] shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Custom Rate:</span>
                     <input
                       type="number"
                       step="0.0001"
                       min="0.0001"
                       value={customRateInput}
                       onChange={(e) => handleCustomRateChange(e.target.value)}
-                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono"
+                      className={`flex-1 border rounded-lg px-2.5 py-1 text-xs font-mono ${
+                        isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={handleResetRate}
-                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
+                      className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                        isLight ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                      }`}
                     >
                       Reset
                     </button>
@@ -845,11 +928,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300">Journal Legs</span>
+                <span className={`text-xs font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Journal Legs</span>
                 <button
                   type="button"
                   onClick={() => handleAddLeg('DEBIT')}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 rounded-lg border border-indigo-500/30 transition-colors"
+                  className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-colors ${
+                    isLight ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200' : 'bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border-indigo-500/30'
+                  }`}
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add Row
@@ -865,17 +950,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   return (
                     <div
                       key={leg.id}
-                      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2.5 bg-slate-950/90 border border-slate-800 rounded-xl"
+                      className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2.5 border rounded-xl ${
+                        isLight ? 'bg-slate-50/80 border-slate-200' : 'bg-slate-950/90 border-slate-800'
+                      }`}
                     >
                       {/* Dr / Cr Toggle */}
-                      <div className="flex rounded-lg overflow-hidden border border-slate-700 bg-slate-900 shrink-0">
+                      <div className={`flex rounded-lg overflow-hidden border shrink-0 ${
+                        isLight ? 'border-slate-300 bg-slate-100' : 'border-slate-700 bg-slate-900'
+                      }`}>
                         <button
                           type="button"
                           onClick={() => handleLegChange(index, 'type', 'DEBIT')}
                           className={`px-2.5 py-1.5 text-xs font-bold transition-colors ${
                             leg.type === 'DEBIT'
-                              ? 'bg-emerald-600 text-white'
-                              : 'text-slate-400 hover:text-white'
+                              ? 'bg-emerald-600 !text-white text-white'
+                              : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
                           }`}
                         >
                           DEBIT
@@ -885,8 +974,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           onClick={() => handleLegChange(index, 'type', 'CREDIT')}
                           className={`px-2.5 py-1.5 text-xs font-bold transition-colors ${
                             leg.type === 'CREDIT'
-                              ? 'bg-sky-600 text-white'
-                              : 'text-slate-400 hover:text-white'
+                              ? 'bg-sky-600 !text-white text-white'
+                              : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
                           }`}
                         >
                           CREDIT
@@ -899,7 +988,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           value={leg.accountId}
                           onChange={(e) => handleLegChange(index, 'accountId', e.target.value)}
                           required
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                          className={`w-full border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
+                            isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-slate-200'
+                          }`}
                         >
                           <option value="">-- Select Account --</option>
                           <optgroup label="Assets (1000s)">
@@ -973,10 +1064,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           onChange={(e) =>
                             handleLegChange(index, 'amount', parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-1.5 text-xs font-mono font-medium text-white focus:outline-none focus:border-indigo-500 text-right"
+                          className={`w-full border rounded-lg pl-7 pr-2 py-1.5 text-xs font-mono font-medium focus:outline-none focus:border-indigo-500 text-right ${
+                            isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                          }`}
                         />
                         {selectedCurrency !== baseCurrency && (leg.amount || 0) > 0 && (
-                          <div className="text-[10px] text-emerald-400 font-mono text-right pr-1 pt-0.5 truncate">
+                          <div className={`text-[10px] font-mono text-right pr-1 pt-0.5 truncate ${
+                            isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400'
+                          }`}>
                             ≈ {currencySymbol}{convertedAmt.toFixed(2)}
                           </div>
                         )}
@@ -989,7 +1084,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                           placeholder="Line memo (optional)"
                           value={leg.memo || ''}
                           onChange={(e) => handleLegChange(index, 'memo', e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                          className={`w-full border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
+                            isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-900 border-slate-700 text-slate-300 placeholder-slate-600'
+                          }`}
                         />
                       </div>
 
@@ -998,7 +1095,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRemoveLeg(index)}
-                          className="p-1.5 text-slate-500 hover:text-rose-400 rounded transition-colors self-center"
+                          className={`p-1.5 rounded transition-colors self-center ${
+                            isLight ? 'text-slate-400 hover:text-rose-600' : 'text-slate-500 hover:text-rose-400'
+                          }`}
                           title="Remove row"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1011,28 +1110,32 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
               {/* Balancing Status Bar with Dual Currency Output */}
               <div
-                className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs ${
+                className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors ${
                   validation.isValid
-                    ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-                    : 'bg-rose-950/30 border-rose-500/40 text-rose-300'
+                    ? isLight
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                      : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
+                    : isLight
+                      ? 'bg-rose-50 border-rose-300 text-rose-900 font-medium'
+                      : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   {validation.isValid ? (
                     <>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className={`w-4 h-4 shrink-0 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
                       <span className="font-semibold">Balanced! Debit equals Credit.</span>
                     </>
                   ) : (
                     <>
-                      <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                      <span>
+                      <AlertTriangle className={`w-4 h-4 shrink-0 ${isLight ? 'text-rose-600' : 'text-rose-400'}`} />
+                      <span className={isLight ? 'text-rose-900' : 'text-rose-200'}>
                         Out of balance by{' '}
-                        <strong>
+                        <strong className={`font-bold ${isLight ? 'text-rose-950' : 'text-white'}`}>
                           {formatCurrency(validation.difference, CurrencyService.getCurrencyInfo(selectedCurrency).symbol)}
                         </strong>
                         {selectedCurrency !== baseCurrency && (
-                          <span className="ml-1 text-[11px] text-rose-300">
+                          <span className={`ml-1 text-[11px] font-semibold ${isLight ? 'text-rose-800' : 'text-rose-300'}`}>
                             (≈ {currencySymbol}{(round2(validation.difference * exchangeRate)).toFixed(2)})
                           </span>
                         )}
@@ -1041,19 +1144,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 font-mono text-xs text-right">
+                <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 font-mono text-xs text-right ${
+                  isLight ? 'text-slate-800' : 'text-slate-300'
+                }`}>
                   <div>
-                    <span>Debits: {formatCurrency(validation.totalDebit, CurrencyService.getCurrencyInfo(selectedCurrency).symbol)}</span>
+                    <span>Debits: <strong className={isLight ? 'text-slate-900' : 'text-white'}>{formatCurrency(validation.totalDebit, CurrencyService.getCurrencyInfo(selectedCurrency).symbol)}</strong></span>
                     {selectedCurrency !== baseCurrency && (
-                      <span className="text-[10px] text-emerald-400 ml-1">
+                      <span className={`text-[10px] ml-1 font-semibold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
                         (≈ {currencySymbol}{(round2(validation.totalDebit * exchangeRate)).toFixed(2)})
                       </span>
                     )}
                   </div>
                   <div>
-                    <span>Credits: {formatCurrency(validation.totalCredit, CurrencyService.getCurrencyInfo(selectedCurrency).symbol)}</span>
+                    <span>Credits: <strong className={isLight ? 'text-slate-900' : 'text-white'}>{formatCurrency(validation.totalCredit, CurrencyService.getCurrencyInfo(selectedCurrency).symbol)}</strong></span>
                     {selectedCurrency !== baseCurrency && (
-                      <span className="text-[10px] text-emerald-400 ml-1">
+                      <span className={`text-[10px] ml-1 font-semibold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
                         (≈ {currencySymbol}{(round2(validation.totalCredit * exchangeRate)).toFixed(2)})
                       </span>
                     )}
@@ -1070,7 +1175,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       placeholder="Receipt # or invoice note (optional)"
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
-                      className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                      className={`flex-1 border rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
+                        isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-950 border-slate-700 text-slate-200 placeholder-slate-500'
+                      }`}
                     />
                     <button
                       type="button"
@@ -1079,7 +1186,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                         setShowReference(false);
                       }}
                       title="Remove note"
-                      className="text-slate-500 hover:text-slate-300 p-1"
+                      className={`p-1 transition-colors ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1088,7 +1195,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowReference(true)}
-                    className="text-[11px] text-slate-500 hover:text-indigo-400 font-medium transition-colors"
+                    className="text-[11px] text-indigo-500 hover:text-indigo-600 font-medium transition-colors"
                   >
                     + Add Receipt / Note (Optional)
                   </button>
@@ -1098,11 +1205,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           )}
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800 shrink-0">
+          <div className={`flex items-center justify-end gap-2.5 pt-3 border-t shrink-0 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+              className={`px-4 py-2 text-xs font-medium rounded-xl transition-colors ${
+                isLight ? 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200' : 'text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700'
+              }`}
             >
               Cancel
             </button>
@@ -1111,11 +1220,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               disabled={!validation.isValid}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 text-xs font-semibold rounded-xl shadow-lg transition-all ${
                 validation.isValid
-                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30 active:scale-95'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  ? 'bg-indigo-600 hover:bg-indigo-500 !text-white text-white shadow-indigo-600/30 active:scale-95'
+                  : isLight ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 text-slate-500 cursor-not-allowed'
               }`}
             >
-              <span>
+              <span className="!text-white text-white">
                 {editingTransaction
                   ? 'Update Entry'
                   : isAdvanced
@@ -1126,7 +1235,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   ? 'Save Income'
                   : 'Save Transfer'}
               </span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 !text-white text-white" />
             </button>
           </div>
         </form>
@@ -1134,30 +1243,34 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         {/* Update Confirmation Modal */}
         {isUpdateConfirmOpen && (
           <div className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-3">
+            <div className={`border rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-3 ${
+              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white text-sm">Confirm Update Entry</h4>
-                  <p className="text-xs text-slate-300">
+                  <h4 className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>Confirm Update Entry</h4>
+                  <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
                     Are you sure you want to update this transaction? Changes will modify the general ledger balances.
                   </p>
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <div className={`flex justify-end gap-2 pt-2 border-t ${isLight ? 'border-slate-100' : 'border-slate-800'}`}>
                 <button
                   type="button"
                   onClick={() => setIsUpdateConfirmOpen(false)}
-                  className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                    isLight ? 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200' : 'text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700'
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmUpdate}
-                  className="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow transition-all active:scale-95"
+                  className="px-4 py-1.5 text-xs font-semibold !text-white text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow transition-all active:scale-95"
                 >
                   Confirm Update
                 </button>

@@ -54,6 +54,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
   onEditTransaction,
 }) => {
   const currency = settings.currencySymbol || '$';
+  const isLight = settings.theme === 'light';
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
@@ -332,14 +333,18 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border rounded-2xl p-5 transition-all shadow-sm ${
+        isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-200/50' : 'bg-slate-900/90 border-slate-800 text-white shadow-xl'
+      }`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+          <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
+            isLight ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
+          }`}>
             <Landmark className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Chart of Accounts</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className={`text-lg font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>Chart of Accounts</h2>
+            <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               Standard 7-category accounting classification with live debit/credit net balances
             </p>
           </div>
@@ -349,34 +354,40 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
           <button
             type="button"
             onClick={() => setIsColumnModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all shadow-sm"
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all shadow-sm ${
+              isLight
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+            }`}
             title="Customize Columns"
           >
-            <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
+            <SlidersHorizontal className="w-4 h-4 text-indigo-500" />
             <span>Columns</span>
           </button>
 
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 !text-white text-white shadow-md shadow-indigo-600/30 transition-all active:scale-95"
           >
-            <Plus className="w-4 h-4" />
-            Create Account
+            <Plus className="w-4 h-4 !text-white text-white" />
+            <span className="!text-white text-white">Create Account</span>
           </button>
         </div>
       </div>
 
       {/* Category Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-        <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 overflow-x-auto text-xs font-medium">
+        <div className={`flex p-1 rounded-xl border overflow-x-auto text-xs font-medium ${
+          isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-900/80 border-slate-800'
+        }`}>
           {CATEGORY_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setSelectedCategory(tab.key)}
               className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-all ${
                 selectedCategory === tab.key
-                  ? 'bg-indigo-600 text-white shadow-sm font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 !text-white text-white shadow-sm font-semibold'
+                  : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               {tab.label}
@@ -385,23 +396,29 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
         </div>
 
         <div className="relative min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
             placeholder="Search account name or code..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className={`w-full border rounded-lg pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
+              isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-950 border-slate-700 text-slate-200 placeholder-slate-500'
+            }`}
           />
         </div>
       </div>
 
       {/* Accounts Table */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className={`border rounded-2xl overflow-hidden shadow-sm transition-all ${
+        isLight ? 'bg-white border-slate-200 shadow-slate-200/50' : 'bg-slate-900/90 border-slate-800 shadow-xl'
+      }`}>
         <div className="overflow-x-auto">
           <table className={`w-full text-left text-xs ${activeColumns.length <= 3 ? 'table-fixed' : ''}`}>
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-semibold uppercase tracking-wider">
+              <tr className={`border-b font-semibold uppercase tracking-wider ${
+                isLight ? 'border-slate-200 bg-slate-50/90 text-slate-700' : 'border-slate-800 bg-slate-950/60 text-slate-400'
+              }`}>
                 {activeColumns.map((col) => {
                   const isCompact = activeColumns.length <= 3;
                   const widthClass = isCompact
@@ -427,7 +444,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                 })}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className={isLight ? 'divide-y divide-slate-100' : 'divide-y divide-slate-800/60'}>
               {filteredAccounts.map((acc) => {
                 const bal = balances.get(acc.id);
                 const balanceVal = bal?.balance || 0;
@@ -439,14 +456,18 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                       setSelectedAccountForDrilldown(acc);
                       setShowAllDrilldownTransactions(false);
                     }}
-                    className="hover:bg-slate-800/60 cursor-pointer transition-colors group active:bg-slate-800/80"
+                    className={`cursor-pointer transition-colors group ${
+                      isLight ? 'hover:bg-slate-50/90 active:bg-slate-100' : 'hover:bg-slate-800/60 active:bg-slate-800/80'
+                    }`}
                     title="Click to view recent transactions for this account"
                   >
                     {activeColumns.map((col) => {
                       switch (col.id) {
                         case 'code':
                           return (
-                            <td key={col.id} className="py-2.5 px-2 sm:px-4 font-mono font-bold text-indigo-300 truncate">
+                            <td key={col.id} className={`py-2.5 px-2 sm:px-4 font-mono font-bold truncate ${
+                              isLight ? 'text-indigo-600' : 'text-indigo-300'
+                            }`}>
                               {acc.code}
                             </td>
                           );
@@ -455,11 +476,11 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                             <td key={col.id} className="py-2.5 px-2 sm:px-4 truncate">
                               <div className="flex items-center justify-between gap-1.5 min-w-0">
                                 <div className="flex items-center gap-1.5 min-w-0 truncate">
-                                  <span className="font-semibold text-slate-200 truncate">{acc.name}</span>
+                                  <span className={`font-semibold truncate ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{acc.name}</span>
                                   {acc.isSystem && (
                                     <span
                                       title="System Account"
-                                      className="inline-flex items-center text-[10px] text-slate-500 shrink-0"
+                                      className={`inline-flex items-center text-[10px] shrink-0 ${isLight ? 'text-slate-400' : 'text-slate-500'}`}
                                     >
                                       <Shield className="w-3 h-3" />
                                     </span>
@@ -471,7 +492,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                                     e.stopPropagation();
                                     handleOpenEditModal(acc);
                                   }}
-                                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-opacity shrink-0"
+                                  className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-opacity shrink-0 ${
+                                    isLight ? 'hover:bg-slate-200 text-slate-400 hover:text-slate-800' : 'hover:bg-slate-700 text-slate-400 hover:text-white'
+                                  }`}
                                   title="Edit Account Details"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
@@ -484,7 +507,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                             <td key={col.id} className="py-2.5 px-2 sm:px-4 truncate">
                               <div className="flex items-center gap-1.5 min-w-0 truncate">
                                 <span className="shrink-0">{getCategoryIcon(acc.category)}</span>
-                                <span className="font-medium text-slate-300 truncate text-[11px] sm:text-xs">
+                                <span className={`font-medium truncate text-[11px] sm:text-xs ${
+                                  isLight ? 'text-slate-700' : 'text-slate-300'
+                                }`}>
                                   {acc.category.replace(/_/g, ' ')}
                                 </span>
                               </div>
@@ -496,8 +521,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                               <span
                                 className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                   acc.normalBalance === 'DEBIT'
-                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                    : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                                    ? isLight ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    : isLight ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                                 }`}
                               >
                                 {acc.normalBalance}
@@ -506,13 +531,17 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                           );
                         case 'subcategory':
                           return (
-                            <td key={col.id} className="py-2.5 px-2 sm:px-4 text-slate-400 truncate">
+                            <td key={col.id} className={`py-2.5 px-2 sm:px-4 truncate ${
+                              isLight ? 'text-slate-500' : 'text-slate-400'
+                            }`}>
                               {acc.subcategory || '—'}
                             </td>
                           );
                         case 'balance':
                           return (
-                            <td key={col.id} className="py-2.5 px-2 sm:px-4 text-right font-mono font-bold text-xs sm:text-sm text-slate-100 whitespace-nowrap">
+                            <td key={col.id} className={`py-2.5 px-2 sm:px-4 text-right font-mono font-bold text-xs sm:text-sm whitespace-nowrap ${
+                              isLight ? 'text-slate-900' : 'text-slate-100'
+                            }`}>
                               {formatCurrency(balanceVal, currency)}
                             </td>
                           );
@@ -531,21 +560,24 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       {/* Account Form Modal (Create & Edit) */}
       {isFormModalOpen && (
         <div className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className={`border rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 ${
+            isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-200/50' : 'bg-slate-900 border-slate-800 text-white'
+          }`}>
+            <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
               <div className="flex items-center gap-2">
                 {formMode === 'create' ? (
-                  <Plus className="w-5 h-5 text-indigo-400" />
+                  <Plus className="w-5 h-5 text-indigo-500" />
                 ) : (
-                  <Pencil className="w-5 h-5 text-indigo-400" />
+                  <Pencil className="w-5 h-5 text-indigo-500" />
                 )}
-                <h3 className="font-bold text-white text-base">
+                <h3 className={`font-bold text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {formMode === 'create' ? 'Create Ledger Account' : 'Edit Ledger Account'}
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsFormModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className={`p-1 transition-colors ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-slate-400 hover:text-white'}`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -554,13 +586,17 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             <form onSubmit={handleSaveAccountForm} className="space-y-4">
               {/* Classification */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-400'
+                }`}>
                   Accounting Classification
                 </label>
                 <select
                   value={category}
                   onChange={(e) => handleCategoryChange(e.target.value as AccountCategory)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500"
+                  className={`w-full border rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white focus:border-indigo-500'
+                  }`}
                 >
                   <option value="ASSET">1 • ASSET (Debit normal)</option>
                   <option value="LIABILITY">2 • LIABILITY (Credit normal)</option>
@@ -575,10 +611,16 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               {/* Code and Prefix enforcement */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <label className={`block text-xs font-semibold uppercase tracking-wider ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
                     Account Code
                   </label>
-                  <span className="text-[11px] font-mono text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-500/30">
+                  <span className={`text-[11px] font-mono px-2 py-0.5 rounded border font-bold ${
+                    isLight
+                      ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                      : 'text-indigo-400 bg-indigo-950/60 border-indigo-500/30'
+                  }`}>
                     Prefix: {CATEGORY_CODE_PREFIX[category]}xxx
                   </span>
                 </div>
@@ -591,26 +633,28 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                     setCode(e.target.value);
                     setCodeError('');
                   }}
-                  className={`w-full bg-slate-950 border rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none ${
+                  className={`w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none ${
                     codeError
                       ? 'border-rose-500 focus:border-rose-400'
-                      : 'border-slate-700 focus:border-indigo-500'
-                  }`}
+                      : isLight ? 'border-slate-300 focus:border-indigo-600' : 'border-slate-700 focus:border-indigo-500'
+                  } ${isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'}`}
                 />
                 {codeError && (
-                  <div className="flex items-center gap-1.5 mt-1.5 text-xs text-rose-400">
+                  <div className="flex items-center gap-1.5 mt-1.5 text-xs text-rose-500 font-medium">
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                     <span>{codeError}</span>
                   </div>
                 )}
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className={`text-[11px] mt-1 ${isLight ? 'text-slate-600' : 'text-slate-500'}`}>
                   Strictly enforced: {CATEGORY_LABELS[category]} accounts must start with digit &apos;{CATEGORY_CODE_PREFIX[category]}&apos;.
                 </p>
               </div>
 
               {/* Account Name */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-400'
+                }`}>
                   Account Name
                 </label>
                 <input
@@ -619,13 +663,17 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                   placeholder="e.g. Crypto Cold Wallet, Pet Care, Client Invoices"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+                  }`}
                 />
               </div>
 
               {/* Subcategory */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-400'
+                }`}>
                   Subcategory (Optional)
                 </label>
                 <input
@@ -633,13 +681,17 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                   placeholder="e.g. Liquid Funds, Operating Expenses, Passive Income"
                   value={subcategory}
                   onChange={(e) => setSubcategory(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+                  }`}
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-400'
+                }`}>
                   Description (Optional)
                 </label>
                 <textarea
@@ -647,23 +699,27 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                   placeholder="Notes about this account's purpose or usage"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className={`w-full border rounded-lg px-3 py-2 text-xs focus:outline-none ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+                  }`}
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className={`flex items-center justify-end gap-2 pt-3 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
                 <button
                   type="button"
                   onClick={() => setIsFormModalOpen(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 rounded-lg"
+                  className={`px-4 py-2 text-xs font-medium rounded-lg transition-colors ${
+                    isLight ? 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200' : 'text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700'
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md shadow-indigo-600/30"
+                  className="px-4 py-2 text-xs font-semibold !text-white text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md shadow-indigo-600/30 transition-all active:scale-95"
                 >
-                  {formMode === 'create' ? 'Create Account' : 'Save Changes'}
+                  <span className="!text-white text-white">{formMode === 'create' ? 'Create Account' : 'Save Changes'}</span>
                 </button>
               </div>
             </form>
@@ -674,19 +730,21 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       {/* Customize Columns Modal with Drag-and-Drop */}
       {isColumnModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className={`border rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-5 ${
+            isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-200/50' : 'bg-slate-900 border-slate-800 text-white'
+          }`}>
+            <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
               <div className="flex items-center gap-2.5">
-                <SlidersHorizontal className="w-5 h-5 text-indigo-400" />
+                <SlidersHorizontal className="w-5 h-5 text-indigo-500" />
                 <div>
-                  <h3 className="font-bold text-white text-base">Customize Columns</h3>
-                  <p className="text-xs text-slate-400">Drag items to reorder, or toggle visibility</p>
+                  <h3 className={`font-bold text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>Customize Columns</h3>
+                  <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Drag items to reorder, or toggle visibility</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsColumnModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className={`p-1 transition-colors ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-slate-400 hover:text-white'}`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -704,28 +762,36 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                   style={{ touchAction: 'none' }}
                   className={`flex items-center justify-between p-3 rounded-xl border select-none transition-all duration-150 ${
                     activeDragColumnIndex === idx
-                      ? 'scale-[1.03] shadow-2xl z-30 ring-2 ring-indigo-500 bg-slate-900 border-indigo-400 cursor-grabbing'
-                      : 'cursor-grab hover:border-slate-700'
+                      ? isLight
+                        ? 'scale-[1.03] shadow-2xl z-30 ring-2 ring-indigo-500 bg-white border-indigo-400 cursor-grabbing'
+                        : 'scale-[1.03] shadow-2xl z-30 ring-2 ring-indigo-500 bg-slate-900 border-indigo-400 cursor-grabbing'
+                      : isLight
+                        ? 'cursor-grab hover:border-slate-300'
+                        : 'cursor-grab hover:border-slate-700'
                   } ${
                     col.enabled
-                      ? 'bg-slate-950 border-slate-700/80 text-white'
-                      : 'bg-slate-950/40 border-slate-800/50 text-slate-500'
+                      ? isLight
+                        ? 'bg-slate-50 border-slate-200 text-slate-900 shadow-2xs'
+                        : 'bg-slate-950 border-slate-700/80 text-white'
+                      : isLight
+                        ? 'bg-slate-100/50 border-slate-200/60 text-slate-400'
+                        : 'bg-slate-950/40 border-slate-800/50 text-slate-500'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 pointer-events-none">
-                    <span className="text-slate-500 hover:text-slate-300 p-0.5" title="Hold and drag to reorder">
-                      <GripVertical className="w-4 h-4 text-indigo-400" />
+                    <span className={`p-0.5 ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-slate-500 hover:text-slate-300'}`} title="Hold and drag to reorder">
+                      <GripVertical className="w-4 h-4 text-indigo-500" />
                     </span>
                     <button
                       type="button"
                       onClick={() => handleToggleColumn(col.id)}
                       className={`pointer-events-auto w-5 h-5 rounded-md flex items-center justify-center border transition-colors active:scale-90 ${
                         col.enabled
-                          ? 'bg-indigo-600 border-indigo-500 text-white'
-                          : 'border-slate-700 bg-slate-900'
+                          ? 'bg-indigo-600 border-indigo-500 !text-white text-white'
+                          : isLight ? 'border-slate-300 bg-white' : 'border-slate-700 bg-slate-900'
                       }`}
                     >
-                      {col.enabled && <Check className="w-3.5 h-3.5" />}
+                      {col.enabled && <Check className="w-3.5 h-3.5 !text-white text-white stroke-[3]" />}
                     </button>
                     <span className="text-xs font-semibold">{col.label}</span>
                   </div>
@@ -735,7 +801,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                       type="button"
                       disabled={idx === 0}
                       onClick={() => handleMoveColumn(idx, 'up')}
-                      className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent active:scale-95"
+                      className={`p-1 rounded-lg disabled:opacity-20 active:scale-95 transition-colors ${
+                        isLight ? 'hover:bg-slate-200 text-slate-500 hover:text-slate-800' : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                      }`}
                       title="Move left/up"
                     >
                       <ArrowUp className="w-3.5 h-3.5" />
@@ -744,7 +812,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                       type="button"
                       disabled={idx === columnConfigs.length - 1}
                       onClick={() => handleMoveColumn(idx, 'down')}
-                      className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent active:scale-95"
+                      className={`p-1 rounded-lg disabled:opacity-20 active:scale-95 transition-colors ${
+                        isLight ? 'hover:bg-slate-200 text-slate-500 hover:text-slate-800' : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                      }`}
                       title="Move right/down"
                     >
                       <ArrowDown className="w-3.5 h-3.5" />
@@ -754,11 +824,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               ))}
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+            <div className={`flex items-center justify-between pt-3 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
               <button
                 type="button"
                 onClick={handleResetColumns}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                  isLight ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset to Default</span>
@@ -767,9 +839,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsColumnModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md transition-colors"
+                className="px-4 py-2 text-xs font-semibold !text-white text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md transition-colors active:scale-95"
               >
-                Done
+                <span className="!text-white text-white">Done</span>
               </button>
             </div>
           </div>
@@ -779,23 +851,35 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       {/* Account Drilldown Activity Modal */}
       {selectedAccountForDrilldown && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+          <div className={`border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[88vh] ${
+            isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-300/50' : 'bg-slate-900 border-slate-800 text-white'
+          }`}>
             {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+            <div className={`px-6 py-4 border-b flex items-center justify-between ${
+              isLight ? 'border-slate-200 bg-slate-50/90' : 'border-slate-800 bg-slate-950/50'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+                <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
+                  isLight ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                }`}>
                   <Landmark className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-500/30">
+                    <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${
+                      isLight ? 'text-indigo-700 bg-indigo-50 border-indigo-200' : 'text-indigo-400 bg-indigo-950/60 border-indigo-500/30'
+                    }`}>
                       {selectedAccountForDrilldown.code}
                     </span>
-                    <h3 className="font-bold text-white text-base truncate max-w-[200px] sm:max-w-xs">
+                    <h3 className={`font-bold text-base truncate max-w-[200px] sm:max-w-xs ${
+                      isLight ? 'text-slate-900' : 'text-white'
+                    }`}>
                       {selectedAccountForDrilldown.name}
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                  <div className={`flex items-center gap-2 text-xs mt-0.5 ${
+                    isLight ? 'text-slate-600' : 'text-slate-400'
+                  }`}>
                     <span>{selectedAccountForDrilldown.category}</span>
                     {selectedAccountForDrilldown.subcategory && (
                       <>
@@ -809,8 +893,11 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setSelectedAccountForDrilldown(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -818,22 +905,26 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             </div>
 
             {/* Account Summary Strip */}
-            <div className="p-4 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between">
+            <div className={`p-4 border-b flex items-center justify-between ${
+              isLight ? 'bg-slate-50/80 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+            }`}>
               <div>
-                <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block">
+                <span className={`text-[11px] uppercase tracking-wider font-semibold block ${
+                  isLight ? 'text-slate-600' : 'text-slate-400'
+                }`}>
                   Current Account Balance
                 </span>
-                <span className="text-xl font-bold font-mono text-white">
+                <span className={`text-xl font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {formatCurrency(balances.get(selectedAccountForDrilldown.id)?.balance || 0, currency)}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-[11px] text-slate-400 block">Normal Balance</span>
+                <span className={`text-[11px] block ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Normal Balance</span>
                 <span
                   className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                     selectedAccountForDrilldown.normalBalance === 'DEBIT'
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                      ? isLight ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : isLight ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                   }`}
                 >
                   {selectedAccountForDrilldown.normalBalance}
@@ -844,14 +935,16 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             {/* Transactions List */}
             <div className="p-4 flex-1 overflow-y-auto space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <h4 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
                   {showAllDrilldownTransactions ? 'All Account Activity' : 'Recent Transactions'} ({drilldownTransactions.length})
                 </h4>
                 {drilldownTransactions.length > 5 && (
                   <button
                     type="button"
                     onClick={() => setShowAllDrilldownTransactions(!showAllDrilldownTransactions)}
-                    className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline flex items-center gap-1"
+                    className={`text-xs font-semibold underline flex items-center gap-1 ${
+                      isLight ? 'text-indigo-600 hover:text-indigo-700' : 'text-indigo-400 hover:text-indigo-300'
+                    }`}
                   >
                     <span>{showAllDrilldownTransactions ? 'Show Latest 5' : `Show All (${drilldownTransactions.length})`}</span>
                     <ChevronRight className={`w-3 h-3 transition-transform ${showAllDrilldownTransactions ? '-rotate-90' : 'rotate-90'}`} />
@@ -860,7 +953,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               </div>
 
               {drilldownTransactions.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-500 italic bg-slate-950/40 rounded-2xl border border-slate-800/60">
+                <div className={`p-6 text-center text-xs italic rounded-2xl border ${
+                  isLight ? 'bg-slate-50 text-slate-500 border-slate-200' : 'bg-slate-950/40 text-slate-500 border-slate-800/60'
+                }`}>
                   No transactions recorded under this account yet.
                 </div>
               ) : (
@@ -874,22 +969,26 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                       <div
                         key={tx.id}
                         onClick={() => onEditTransaction?.(tx)}
-                        className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl hover:border-indigo-500/50 hover:bg-slate-900/90 active:scale-[0.99] transition-all space-y-1.5 cursor-pointer group"
+                        className={`p-3 border rounded-xl active:scale-[0.99] transition-all space-y-1.5 cursor-pointer group ${
+                          isLight
+                            ? 'bg-white border-slate-200 hover:border-indigo-400 hover:bg-slate-50/90 shadow-2xs'
+                            : 'bg-slate-950/80 border-slate-800 hover:border-indigo-500/50 hover:bg-slate-900/90'
+                        }`}
                         title="Click to edit or amend this transaction"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-mono text-slate-400">{tx.date}</span>
+                          <span className={`text-xs font-mono ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>{tx.date}</span>
                           <div className="flex items-center gap-2">
                             <span
                               className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                 isDebit
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                  : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                                  ? isLight ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : isLight ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                               }`}
                             >
                               {isDebit ? 'DEBIT' : 'CREDIT'}
                             </span>
-                            <span className="font-mono font-bold text-sm text-white">
+                            <span className={`font-mono font-bold text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>
                               {formatCurrency(legAmount, currency)}
                             </span>
                           </div>
@@ -897,20 +996,26 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-semibold text-slate-200 truncate group-hover:text-indigo-300 transition-colors">
+                            <span className={`font-semibold truncate transition-colors ${
+                              isLight ? 'text-slate-900 group-hover:text-indigo-600' : 'text-slate-200 group-hover:text-indigo-300'
+                            }`}>
                               {tx.description}
                             </span>
-                            <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                            <Pencil className={`w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ${
+                              isLight ? 'text-indigo-600' : 'text-indigo-400'
+                            }`} />
                           </div>
                           {tx.meta?.currency && tx.meta.currency !== (settings.baseCurrency || 'USD') && (
-                            <span className="text-[10px] font-mono text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-500/20 shrink-0">
+                            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border shrink-0 ${
+                              isLight ? 'text-indigo-700 bg-indigo-50 border-indigo-200' : 'text-indigo-400 bg-indigo-950/60 border-indigo-500/20'
+                            }`}>
                               {tx.meta.currency} {tx.meta.originalAmount?.toFixed(2)}
                             </span>
                           )}
                         </div>
 
                         {(relevantLeg?.memo || tx.reference) && (
-                          <div className="text-[11px] text-slate-500 truncate">
+                          <div className={`text-[11px] truncate ${isLight ? 'text-slate-600' : 'text-slate-500'}`}>
                             {tx.reference && <span className="mr-2">Ref: {tx.reference}</span>}
                             {relevantLeg?.memo && <span>{relevantLeg.memo}</span>}
                           </div>
@@ -925,7 +1030,11 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAllDrilldownTransactions(true)}
-                  className="w-full py-2.5 px-3 text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 hover:bg-indigo-950/60 rounded-xl border border-indigo-500/20 transition-all flex items-center justify-center gap-1.5"
+                  className={`w-full py-2.5 px-3 text-xs font-semibold rounded-xl border transition-all flex items-center justify-center gap-1.5 ${
+                    isLight
+                      ? 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
+                      : 'text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 hover:bg-indigo-950/60 border-indigo-500/20'
+                  }`}
                 >
                   <span>View More ({drilldownTransactions.length - 5} older transactions)</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -934,19 +1043,27 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between">
+            <div className={`p-4 border-t flex items-center justify-between ${
+              isLight ? 'border-slate-200 bg-slate-50/90' : 'border-slate-800 bg-slate-950/50'
+            }`}>
               <button
                 type="button"
                 onClick={() => handleOpenEditModal(selectedAccountForDrilldown)}
-                className="px-3.5 py-2 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/30 rounded-xl transition-all flex items-center gap-1.5"
+                className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 ${
+                  isLight
+                    ? 'bg-indigo-600 hover:bg-indigo-500 !text-white text-white shadow-md shadow-indigo-600/30 active:scale-95'
+                    : 'text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/30'
+                }`}
               >
-                <Pencil className="w-3.5 h-3.5" />
-                <span>Edit Account</span>
+                <Pencil className={`w-3.5 h-3.5 ${isLight ? '!text-white text-white' : ''}`} />
+                <span className={isLight ? '!text-white text-white' : ''}>Edit Account</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedAccountForDrilldown(null)}
-                className="px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                className={`px-4 py-2 text-xs font-semibold rounded-xl transition-colors ${
+                  isLight ? 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200' : 'text-white bg-slate-800 hover:bg-slate-700'
+                }`}
               >
                 Close
               </button>
