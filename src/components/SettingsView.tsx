@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ShieldCheck,
   Moon,
@@ -649,7 +650,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* Base Currency One-Time Lock Warning Modal */}
-      {isLockConfirmOpen && (
+      {isLockConfirmOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -694,11 +695,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Sample 50 Transactions Confirmation Modal */}
-      {isSampleConfirmOpen && (
+      {isSampleConfirmOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -743,7 +745,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* SECTION 4: NAVIGATION BAR CUSTOMIZATION (POSITION, SHOW/HIDE & REORDER) */}

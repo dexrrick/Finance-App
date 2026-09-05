@@ -65,15 +65,19 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   // Apple Music & TV Floating Liquid Glass Pill Material
   const glassClasses = isLight
-    ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-[0_12px_36px_rgba(0,0,0,0.1),inset_0_1px_0_0_rgba(255,255,255,0.9)]'
-    : 'bg-[#121824]/80 border-white/15 text-slate-100 shadow-[0_16px_40px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.2)]';
+    ? 'border-slate-200/80 text-slate-800 shadow-[0_12px_36px_rgba(0,0,0,0.1),inset_0_1px_0_0_rgba(255,255,255,0.9)]'
+    : 'border-white/20 text-slate-100 shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.25)]';
 
   return (
-    <nav className={`${containerClasses} transition-all duration-300`}>
+    <nav
+      style={{ viewTransitionName: 'none' }}
+      className={`${containerClasses} transition-all duration-300`}
+    >
       <div
         style={{
-          WebkitBackdropFilter: 'blur(30px) saturate(210%)',
-          backdropFilter: 'blur(30px) saturate(210%)',
+          background: isLight ? 'rgba(255, 255, 255, 0.52)' : 'rgba(18, 24, 36, 0.42)',
+          WebkitBackdropFilter: 'blur(28px) saturate(200%)',
+          backdropFilter: 'blur(28px) saturate(200%)',
         }}
         className={`pointer-events-auto max-w-lg w-full rounded-full border px-2 py-1.5 ${glassClasses} transition-all duration-300`}
       >

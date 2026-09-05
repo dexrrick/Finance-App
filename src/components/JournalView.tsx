@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   BookOpen,
   Search,
@@ -576,7 +577,7 @@ export const JournalView: React.FC<JournalViewProps> = ({
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeleteConfirmOpen && (
+      {isDeleteConfirmOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -627,7 +628,8 @@ export const JournalView: React.FC<JournalViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

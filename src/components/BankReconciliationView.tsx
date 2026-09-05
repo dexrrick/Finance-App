@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Upload,
   CheckCircle2,
@@ -982,7 +983,7 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
       )}
 
       {/* ================= MANUAL COLUMN MAPPER MODAL ================= */}
-      {isColumnMapperOpen && (
+      {isColumnMapperOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -1182,11 +1183,12 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ================= PASTE RAW CSV TEXT MODAL ================= */}
-      {isPasteModalOpen && (
+      {isPasteModalOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -1232,11 +1234,12 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ================= BANK RULES MANAGER MODAL ================= */}
-      {isRulesModalOpen && (
+      {isRulesModalOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -1330,7 +1333,8 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

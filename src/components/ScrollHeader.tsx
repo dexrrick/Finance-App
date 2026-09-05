@@ -64,8 +64,10 @@ export const ScrollHeader: React.FC<ScrollHeaderProps> = ({
           : 'bg-transparent border-b border-transparent pb-2'
       } ${className}`}
     >
-      <div className="flex items-center justify-between gap-3 max-w-5xl mx-auto">
-        {/* Left side: Icon + Title + Badge */}
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between max-w-5xl mx-auto transition-all duration-300 ${
+        isScrolled ? 'gap-0 sm:gap-3' : 'gap-2.5 sm:gap-3'
+      }`}>
+        {/* Top Row on mobile, Left side on desktop: Icon + Title + Badge */}
         <div className="flex items-center gap-2.5 min-w-0 transition-all duration-300">
           {icon && (
             <div
@@ -79,9 +81,9 @@ export const ScrollHeader: React.FC<ScrollHeaderProps> = ({
 
           <div className="min-w-0 flex items-center gap-2">
             <h1
-              className={`font-bold tracking-tight transition-all duration-300 truncate ${
+              className={`font-bold tracking-tight transition-all duration-300 ${
                 isScrolled
-                  ? 'text-sm sm:text-base font-semibold'
+                  ? 'text-sm sm:text-base font-semibold truncate'
                   : 'text-xl sm:text-2xl font-bold'
               } ${isLight ? 'text-slate-900' : 'text-slate-100'}`}
             >
@@ -100,13 +102,13 @@ export const ScrollHeader: React.FC<ScrollHeaderProps> = ({
           </div>
         </div>
 
-        {/* Right side: Action Buttons (Visible at top, smoothly hidden when scrolled) */}
+        {/* Action Buttons: Sub-row below title on mobile, right side on desktop. Smoothly collapsed when scrolled */}
         {actions && (
           <div
-            className={`flex items-center gap-2 shrink-0 transition-all duration-300 transform ${
+            className={`flex items-center gap-2 shrink-0 transition-all duration-300 ease-in-out ${
               isScrolled
-                ? 'opacity-0 pointer-events-none scale-90 translate-x-2 invisible w-0 overflow-hidden'
-                : 'opacity-100 pointer-events-auto scale-100 translate-x-0 visible'
+                ? 'opacity-0 pointer-events-none -mt-1 max-h-0 scale-95 overflow-hidden invisible'
+                : 'opacity-100 pointer-events-auto scale-100 max-h-20 visible'
             }`}
           >
             {actions}

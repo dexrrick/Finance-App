@@ -322,7 +322,7 @@ export function App() {
       {/* Main App Body - Without Top App Name Bar */}
       <main className={`flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 ${mainPadding}`}>
         {visitedTabs.has('dashboard') && (
-          <div className={activeTab === 'dashboard' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+          <div className={activeTab === 'dashboard' ? 'block' : 'hidden'}>
             <Dashboard
               accounts={accounts}
               transactions={transactions}
@@ -336,7 +336,7 @@ export function App() {
         )}
 
         {visitedTabs.has('journal') && (
-          <div className={activeTab === 'journal' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+          <div className={activeTab === 'journal' ? 'block' : 'hidden'}>
             <JournalView
               transactions={transactions}
               accounts={accounts}
@@ -353,7 +353,7 @@ export function App() {
         )}
 
         {visitedTabs.has('reconcile') && (
-          <div className={activeTab === 'reconcile' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+          <div className={activeTab === 'reconcile' ? 'block' : 'hidden'}>
             <BankReconciliationView
               accounts={accounts}
               transactions={transactions}
@@ -365,7 +365,7 @@ export function App() {
         )}
 
         {visitedTabs.has('accounts') && (
-          <div className={activeTab === 'accounts' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+          <div className={activeTab === 'accounts' ? 'block' : 'hidden'}>
             <AccountsView
               accounts={accounts}
               transactions={transactions}
@@ -379,7 +379,7 @@ export function App() {
         )}
 
         {visitedTabs.has('reports') && (
-          <div className={activeTab === 'reports' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+          <div className={activeTab === 'reports' ? 'block' : 'hidden'}>
             <ReportsView
               accounts={accounts}
               transactions={transactions}
@@ -389,7 +389,7 @@ export function App() {
         )}
 
         {visitedTabs.has('settings') && (
-          <div className={activeTab === 'settings' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+          <div className={activeTab === 'settings' ? 'block' : 'hidden'}>
             <SettingsView
               settings={settings}
               onUpdateSettings={setSettings}

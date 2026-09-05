@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Landmark,
   Plus,
@@ -559,182 +560,185 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       </div>
 
       {/* Account Form Modal (Create & Edit) */}
-      {isFormModalOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4">
-          <div
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
-            onClick={() => setIsFormModalOpen(false)}
-          />
-          <div className={`relative z-10 border rounded-2xl w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[86vh] overflow-y-auto animate-modal-pop ${
-            isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-200/50' : 'bg-slate-900 border-slate-800 text-white'
-          }`}>
-            <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
-              <div className="flex items-center gap-2">
-                {formMode === 'create' ? (
-                  <Plus className="w-5 h-5 text-indigo-500" />
-                ) : (
-                  <Pencil className="w-5 h-5 text-indigo-500" />
-                )}
-                <h3 className={`font-bold text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  {formMode === 'create' ? 'Create Ledger Account' : 'Edit Ledger Account'}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsFormModalOpen(false)}
-                className={`p-1 transition-colors ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-slate-400 hover:text-white'}`}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveAccountForm} className="space-y-4">
-              {/* Classification */}
-              <div>
-                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
-                  isLight ? 'text-slate-700' : 'text-slate-400'
-                }`}>
-                  Accounting Classification
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => handleCategoryChange(e.target.value as AccountCategory)}
-                  className={`w-full border rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none ${
-                    isLight ? 'bg-white border-slate-300 text-slate-900 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white focus:border-indigo-500'
-                  }`}
-                >
-                  <option value="ASSET">1 • ASSET (Debit normal)</option>
-                  <option value="LIABILITY">2 • LIABILITY (Credit normal)</option>
-                  <option value="EQUITY">3 • EQUITY (Credit normal)</option>
-                  <option value="REVENUE">4 • OPERATING REVENUE (Credit normal)</option>
-                  <option value="EXPENSE">5 • OPERATING EXPENSE (Debit normal)</option>
-                  <option value="OTHER_INCOME">6 • OTHER INCOME (Credit normal)</option>
-                  <option value="OTHER_EXPENSE">7 • OTHER EXPENSE (Debit normal)</option>
-                </select>
-              </div>
-
-              {/* Code and Prefix enforcement */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className={`block text-xs font-semibold uppercase tracking-wider ${
-                    isLight ? 'text-slate-700' : 'text-slate-400'
-                  }`}>
-                    Account Code
-                  </label>
-                  <span className={`text-[11px] font-mono px-2 py-0.5 rounded border font-bold ${
-                    isLight
-                      ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
-                      : 'text-indigo-400 bg-indigo-950/60 border-indigo-500/30'
-                  }`}>
-                    Prefix: {CATEGORY_CODE_PREFIX[category]}xxx
-                  </span>
+      {isFormModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4">
+            <div
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+              onClick={() => setIsFormModalOpen(false)}
+            />
+            <div className={`relative z-10 border rounded-2xl w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[86vh] overflow-y-auto animate-modal-pop ${
+              isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-200/50' : 'bg-slate-900 border-slate-800 text-white'
+            }`}>
+              <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
+                <div className="flex items-center gap-2">
+                  {formMode === 'create' ? (
+                    <Plus className="w-5 h-5 text-indigo-500" />
+                  ) : (
+                    <Pencil className="w-5 h-5 text-indigo-500" />
+                  )}
+                  <h3 className={`font-bold text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    {formMode === 'create' ? 'Create Ledger Account' : 'Edit Ledger Account'}
+                  </h3>
                 </div>
-                <input
-                  type="text"
-                  required
-                  placeholder={`e.g. ${CATEGORY_CODE_PREFIX[category]}010`}
-                  value={code}
-                  onChange={(e) => {
-                    setCode(e.target.value);
-                    setCodeError('');
-                  }}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none ${
-                    codeError
-                      ? 'border-rose-500 focus:border-rose-400'
-                      : isLight ? 'border-slate-300 focus:border-indigo-600' : 'border-slate-700 focus:border-indigo-500'
-                  } ${isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'}`}
-                />
-                {codeError && (
-                  <div className="flex items-center gap-1.5 mt-1.5 text-xs text-rose-500 font-medium">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{codeError}</span>
-                  </div>
-                )}
-                <p className={`text-[11px] mt-1 ${isLight ? 'text-slate-600' : 'text-slate-500'}`}>
-                  Strictly enforced: {CATEGORY_LABELS[category]} accounts must start with digit &apos;{CATEGORY_CODE_PREFIX[category]}&apos;.
-                </p>
-              </div>
-
-              {/* Account Name */}
-              <div>
-                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
-                  isLight ? 'text-slate-700' : 'text-slate-400'
-                }`}>
-                  Account Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Crypto Cold Wallet, Pet Care, Client Invoices"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none ${
-                    isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
-                  }`}
-                />
-              </div>
-
-              {/* Subcategory */}
-              <div>
-                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
-                  isLight ? 'text-slate-700' : 'text-slate-400'
-                }`}>
-                  Subcategory (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Liquid Funds, Operating Expenses, Passive Income"
-                  value={subcategory}
-                  onChange={(e) => setSubcategory(e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none ${
-                    isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
-                  }`}
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
-                  isLight ? 'text-slate-700' : 'text-slate-400'
-                }`}>
-                  Description (Optional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Notes about this account's purpose or usage"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-2 text-xs focus:outline-none ${
-                    isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
-                  }`}
-                />
-              </div>
-
-              <div className={`flex items-center justify-end gap-2 pt-3 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
                 <button
                   type="button"
                   onClick={() => setIsFormModalOpen(false)}
-                  className={`px-4 py-2 text-xs font-medium rounded-lg transition-colors ${
-                    isLight ? 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200' : 'text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700'
-                  }`}
+                  className={`p-1 transition-colors ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-slate-400 hover:text-white'}`}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-semibold !text-white text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md shadow-indigo-600/30 transition-all active:scale-95"
-                >
-                  <span className="!text-white text-white">{formMode === 'create' ? 'Create Account' : 'Save Changes'}</span>
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleSaveAccountForm} className="space-y-4">
+                {/* Classification */}
+                <div>
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
+                    Accounting Classification
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => handleCategoryChange(e.target.value as AccountCategory)}
+                    className={`w-full border rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white focus:border-indigo-500'
+                    }`}
+                  >
+                    <option value="ASSET">1 • ASSET (Debit normal)</option>
+                    <option value="LIABILITY">2 • LIABILITY (Credit normal)</option>
+                    <option value="EQUITY">3 • EQUITY (Credit normal)</option>
+                    <option value="REVENUE">4 • OPERATING REVENUE (Credit normal)</option>
+                    <option value="EXPENSE">5 • OPERATING EXPENSE (Debit normal)</option>
+                    <option value="OTHER_INCOME">6 • OTHER INCOME (Credit normal)</option>
+                    <option value="OTHER_EXPENSE">7 • OTHER EXPENSE (Debit normal)</option>
+                  </select>
+                </div>
+
+                {/* Code and Prefix enforcement */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={`text-xs font-semibold uppercase tracking-wider ${
+                      isLight ? 'text-slate-700' : 'text-slate-400'
+                    }`}>
+                      Account Code
+                    </label>
+                    <span className={`text-[11px] font-mono px-2 py-0.5 rounded border font-bold ${
+                      isLight
+                        ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                        : 'text-indigo-400 bg-indigo-950/60 border-indigo-500/30'
+                    }`}>
+                      Prefix: {CATEGORY_CODE_PREFIX[category]}xxx
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    placeholder={`e.g. ${CATEGORY_CODE_PREFIX[category]}010`}
+                    value={code}
+                    onChange={(e) => {
+                      setCode(e.target.value);
+                      setCodeError('');
+                    }}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none ${
+                      codeError
+                        ? 'border-rose-500 focus:border-rose-400'
+                        : isLight ? 'border-slate-300 focus:border-indigo-600' : 'border-slate-700 focus:border-indigo-500'
+                    } ${isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'}`}
+                  />
+                  {codeError && (
+                    <div className="flex items-center gap-1.5 mt-1.5 text-xs text-rose-500 font-medium">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{codeError}</span>
+                    </div>
+                  )}
+                  <p className={`text-[11px] mt-1 ${isLight ? 'text-slate-600' : 'text-slate-500'}`}>
+                    Strictly enforced: {CATEGORY_LABELS[category]} accounts must start with digit &apos;{CATEGORY_CODE_PREFIX[category]}&apos;.
+                  </p>
+                </div>
+
+                {/* Account Name */}
+                <div>
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
+                    Account Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Crypto Cold Wallet, Pet Care, Client Invoices"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+
+                {/* Subcategory */}
+                <div>
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
+                    Subcategory (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Liquid Funds, Operating Expenses, Passive Income"
+                    value={subcategory}
+                    onChange={(e) => setSubcategory(e.target.value)}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Notes about this account's purpose or usage"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className={`w-full border rounded-lg px-3 py-2 text-xs focus:outline-none ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-600' : 'bg-slate-950 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+
+                <div className={`flex items-center justify-end gap-2 pt-3 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
+                  <button
+                    type="button"
+                    onClick={() => setIsFormModalOpen(false)}
+                    className={`px-4 py-2 text-xs font-medium rounded-lg transition-colors ${
+                      isLight ? 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200' : 'text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-xs font-semibold !text-white text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md shadow-indigo-600/30 transition-all active:scale-95"
+                  >
+                    <span className="!text-white text-white">{formMode === 'create' ? 'Create Account' : 'Save Changes'}</span>
+                  </button>
+                </div>
+              </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Customize Columns Modal with Drag-and-Drop */}
-      {isColumnModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+      {isColumnModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
             onClick={() => setIsColumnModalOpen(false)}
@@ -854,12 +858,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Account Drilldown Activity Modal */}
-      {selectedAccountForDrilldown && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+      {selectedAccountForDrilldown &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           {/* Backdrop with tap-to-dismiss */}
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
@@ -1086,7 +1092,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

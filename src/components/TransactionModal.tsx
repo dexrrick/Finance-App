@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Plus,
@@ -429,7 +430,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   if (!isRendered) return null;
 
-  return (
+  return typeof document !== 'undefined' ? createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4">
       {/* Dedicated Backdrop - Tap to Dismiss */}
       <div
@@ -1327,6 +1328,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
         )}
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 };
