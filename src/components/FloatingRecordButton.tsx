@@ -36,10 +36,10 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
     setIsOpen(!isOpen);
   };
 
-  const popoverButtonClass = `flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border shadow-xl text-xs font-semibold backdrop-blur-md transition-all active:scale-95 ${
+  const popoverButtonClass = `flex items-center gap-2.5 px-4 py-2 rounded-full border shadow-2xl text-xs font-semibold backdrop-blur-2xl transition-all active:scale-95 ${
     isLight
-      ? 'bg-white/95 hover:bg-slate-50 text-slate-800 border-slate-200 shadow-slate-200/50'
-      : 'bg-[#1a2332]/95 hover:bg-[#243044] text-slate-100 border-[#263447]'
+      ? 'bg-white/90 hover:bg-white text-slate-800 border-slate-200/90 shadow-[0_8px_25px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9)]'
+      : 'bg-[#161f2e]/90 hover:bg-[#1e2a3e] text-slate-100 border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.2)]'
   }`;
 
   return (
@@ -105,8 +105,8 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
         aria-label="Add Transaction"
         className={`w-14 h-14 rounded-full flex items-center justify-center !text-white text-white shadow-2xl transition-all duration-200 active:scale-90 ${
           isOpen
-            ? 'bg-slate-800 border-2 border-slate-600 rotate-90'
-            : 'bg-gradient-to-tr from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-blue-600/40'
+            ? 'bg-slate-800/90 border border-white/20 rotate-90 shadow-xl backdrop-blur-md'
+            : 'bg-gradient-to-tr from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 border border-white/25 shadow-[0_10px_30px_rgba(37,99,235,0.45),inset_0_1px_0_rgba(255,255,255,0.35)]'
         }`}
       >
         {isOpen ? <X className="w-6 h-6 text-slate-300" /> : <Plus className="w-7 h-7 stroke-[2.5] !text-white text-white stroke-white" />}

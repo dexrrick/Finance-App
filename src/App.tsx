@@ -301,7 +301,7 @@ export function App() {
   const tabPosition = settings.tabPosition || 'bottom';
   const mainPadding =
     tabPosition === 'bottom'
-      ? 'pt-3 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]'
+      ? 'pt-0 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]'
       : 'pt-2 pb-12';
 
   return (

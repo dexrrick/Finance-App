@@ -650,8 +650,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Base Currency One-Time Lock Warning Modal */}
       {isLockConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setIsLockConfirmOpen(false)}
+          />
+          <div className="relative z-10 bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4 max-h-[86vh] overflow-y-auto animate-modal-pop">
             <div className="flex items-center gap-3 text-amber-400">
               <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
                 <AlertTriangle className="w-6 h-6" />
@@ -695,8 +699,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Sample 50 Transactions Confirmation Modal */}
       {isSampleConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setIsSampleConfirmOpen(false)}
+          />
+          <div className="relative z-10 bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4 max-h-[86vh] overflow-y-auto animate-modal-pop">
             <div className="flex items-center gap-3 text-indigo-400">
               <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
                 <Sparkles className="w-6 h-6" />

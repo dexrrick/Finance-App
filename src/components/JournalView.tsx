@@ -577,8 +577,15 @@ export const JournalView: React.FC<JournalViewProps> = ({
 
       {/* Delete Confirmation Modal */}
       {isDeleteConfirmOpen && (
-        <div className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className={`border rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-3 ${
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => {
+              setIsDeleteConfirmOpen(false);
+              setTxIdsToDelete([]);
+            }}
+          />
+          <div className={`relative z-10 border rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-3 animate-modal-pop ${
             isLight
               ? 'bg-white border-slate-200 text-slate-900'
               : 'bg-slate-900 border-slate-700 text-white'

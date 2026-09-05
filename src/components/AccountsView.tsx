@@ -560,8 +560,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
       {/* Account Form Modal (Create & Edit) */}
       {isFormModalOpen && (
-        <div className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`border rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 ${
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setIsFormModalOpen(false)}
+          />
+          <div className={`relative z-10 border rounded-2xl w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[86vh] overflow-y-auto animate-modal-pop ${
             isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-200/50' : 'bg-slate-900 border-slate-800 text-white'
           }`}>
             <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
@@ -730,8 +734,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
       {/* Customize Columns Modal with Drag-and-Drop */}
       {isColumnModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className={`border rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-5 ${
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setIsColumnModalOpen(false)}
+          />
+          <div className={`relative z-10 border rounded-2xl w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-5 max-h-[86vh] overflow-y-auto animate-modal-pop ${
             isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-200/50' : 'bg-slate-900 border-slate-800 text-white'
           }`}>
             <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
@@ -851,8 +859,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
       {/* Account Drilldown Activity Modal */}
       {selectedAccountForDrilldown && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className={`border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[88vh] ${
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          {/* Backdrop with tap-to-dismiss */}
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setSelectedAccountForDrilldown(null)}
+          />
+          <div className={`relative z-10 border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[84vh] animate-modal-pop ${
             isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-300/50' : 'bg-slate-900 border-slate-800 text-white'
           }`}>
             {/* Header */}
@@ -934,7 +947,10 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             </div>
 
             {/* Transactions List */}
-            <div className="p-4 flex-1 overflow-y-auto space-y-3">
+            <div
+              className="p-4 flex-1 overflow-y-auto overscroll-contain space-y-3"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               <div className="flex items-center justify-between">
                 <h4 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
                   {showAllDrilldownTransactions ? 'All Account Activity' : 'Recent Transactions'} ({drilldownTransactions.length})

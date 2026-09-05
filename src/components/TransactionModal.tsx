@@ -430,16 +430,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   if (!isRendered) return null;
 
   return (
-    <div
-      className={`fixed inset-0 z-[80] overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 transition-opacity duration-200 ${
-        isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100 animate-backdrop-fade'
-      }`}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleSmoothClose();
-      }}
-    >
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4">
+      {/* Dedicated Backdrop - Tap to Dismiss */}
       <div
-        className={`border w-full max-w-2xl shadow-2xl overflow-hidden transition-all duration-200 gpu-layer rounded-2xl max-h-[86vh] sm:max-h-[88vh] flex flex-col ${
+        className={`fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity duration-200 ${
+          isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100 animate-backdrop-fade'
+        }`}
+        onClick={handleSmoothClose}
+      />
+      <div
+        className={`relative z-10 border w-full max-w-2xl shadow-2xl overflow-hidden transition-all duration-200 gpu-layer rounded-2xl max-h-[86vh] sm:max-h-[88vh] flex flex-col ${
           isClosing
             ? 'scale-95 opacity-0'
             : 'animate-modal-pop'

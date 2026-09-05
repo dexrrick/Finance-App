@@ -57,28 +57,28 @@ export const Navigation: React.FC<NavigationProps> = ({
   // Only render enabled tabs
   const visibleTabs = configuredTabs.filter((t) => t.enabled);
 
-  // Position classes: Top or Bottom with safe-area insets
-  const positionClasses =
-    tabPosition === 'top'
-      ? 'sticky top-0 z-40 border-b pt-[env(safe-area-inset-top,0px)] shadow-md'
-      : 'fixed bottom-0 left-0 right-0 z-40 border-t pb-[calc(0.4rem+env(safe-area-inset-bottom,0px))]';
+  // Floating Pill navigation geometry
+  const isTop = tabPosition === 'top';
+  const containerClasses = isTop
+    ? 'sticky top-0 z-40 pt-[calc(0.4rem+env(safe-area-inset-top,0px))] pb-1 px-3 sm:px-4 flex justify-center pointer-events-none'
+    : 'fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 flex justify-center px-3 sm:px-4 pointer-events-none';
 
-  // iOS Liquid Glass styling
+  // Apple Music & TV Floating Liquid Glass Pill Material
   const glassClasses = isLight
-    ? 'bg-white/85 border-slate-200/90 text-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]'
-    : 'bg-[#121824]/85 border-[#263447]/90 text-slate-100 shadow-[0_-10px_35px_rgba(0,0,0,0.5)]';
+    ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-[0_12px_36px_rgba(0,0,0,0.1),inset_0_1px_0_0_rgba(255,255,255,0.9)]'
+    : 'bg-[#121824]/80 border-white/15 text-slate-100 shadow-[0_16px_40px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.2)]';
 
   return (
-    <nav
-      style={{
-        WebkitBackdropFilter: 'blur(24px) saturate(190%)',
-        backdropFilter: 'blur(24px) saturate(190%)',
-      }}
-      className={`${positionClasses} ${glassClasses} transition-all duration-300`}
-    >
-      <div className="max-w-xl mx-auto px-2 pt-1.5 pb-0.5">
+    <nav className={`${containerClasses} transition-all duration-300`}>
+      <div
+        style={{
+          WebkitBackdropFilter: 'blur(30px) saturate(210%)',
+          backdropFilter: 'blur(30px) saturate(210%)',
+        }}
+        className={`pointer-events-auto max-w-lg w-full rounded-full border px-2 py-1.5 ${glassClasses} transition-all duration-300`}
+      >
         <div
-          className="flex items-center justify-around"
+          className="flex items-center justify-around w-full"
           style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))`,
@@ -97,33 +97,33 @@ export const Navigation: React.FC<NavigationProps> = ({
                   HapticsService.selection();
                   setActiveTab(tab.id);
                 }}
-                className={`relative flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all duration-200 active:scale-90 ${
+                className={`relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-all duration-200 active:scale-90 ${
                   isActive
                     ? isLight
                       ? 'text-blue-600 font-semibold'
-                      : 'text-sky-400 font-semibold'
+                      : 'text-sky-300 font-semibold'
                     : isLight
                     ? 'text-slate-500 hover:text-slate-900'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <div
-                  className={`p-1.5 rounded-xl transition-all duration-200 ${
+                  className={`p-1.5 rounded-full transition-all duration-200 ${
                     isActive
                       ? isLight
-                        ? 'bg-blue-500/15 text-blue-600 scale-105 shadow-sm'
-                        : 'bg-sky-500/15 text-sky-400 scale-105 shadow-[0_0_12px_rgba(56,189,248,0.25)] border border-sky-400/30'
+                        ? 'bg-blue-600/15 text-blue-600 scale-105 shadow-xs border border-blue-500/20'
+                        : 'bg-sky-500/20 text-sky-300 scale-105 shadow-[0_0_14px_rgba(56,189,248,0.35)] border border-sky-400/40'
                       : 'hover:bg-white/5'
                   }`}
                 >
-                  <Icon className="w-5 h-5 stroke-[2.2]" />
+                  <Icon className="w-4.5 h-4.5 stroke-[2.2]" />
                 </div>
                 <span
-                  className={`text-[10px] tracking-tight mt-0.5 truncate max-w-full transition-colors ${
+                  className={`text-[9.5px] sm:text-[10px] tracking-tight mt-0.5 truncate max-w-full transition-colors ${
                     isActive
                       ? isLight
                         ? 'text-blue-600 font-semibold'
-                        : 'text-sky-400 font-medium'
+                        : 'text-sky-300 font-semibold'
                       : isLight
                       ? 'text-slate-500'
                       : 'text-slate-400'
@@ -133,7 +133,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </span>
                 {isActive && (
                   <span
-                    className={`absolute bottom-0 w-1 h-1 rounded-full ${
+                    className={`absolute bottom-0 w-1.5 h-0.5 rounded-full ${
                       isLight ? 'bg-blue-600' : 'bg-sky-400 shadow-[0_0_6px_#38bdf8]'
                     }`}
                   />

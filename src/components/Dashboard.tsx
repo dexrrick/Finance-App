@@ -648,10 +648,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Customize Cards Modal */}
       {isCustomizeModalOpen && (
-        <div className={`fixed inset-0 z-50 overflow-y-auto backdrop-blur-xs flex items-center justify-center p-4 ${
-          isLight ? 'bg-slate-900/40' : 'bg-slate-950/80'
-        }`}>
-          <div className={`border rounded-2xl w-full max-w-md shadow-2xl p-5 space-y-4 ${
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setIsCustomizeModalOpen(false)}
+          />
+          <div className={`relative z-10 border rounded-2xl w-full max-w-md shadow-2xl p-5 space-y-4 max-h-[86vh] overflow-y-auto animate-modal-pop ${
             isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
           }`}>
             <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-100' : 'border-slate-800'}`}>

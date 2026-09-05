@@ -983,8 +983,12 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
 
       {/* ================= MANUAL COLUMN MAPPER MODAL ================= */}
       {isColumnMapperOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setIsColumnMapperOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 max-h-[86vh] overflow-y-auto animate-modal-pop">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="flex items-center gap-2.5">
                 <SlidersHorizontal className="w-5 h-5 text-indigo-400" />
@@ -1183,8 +1187,12 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
 
       {/* ================= PASTE RAW CSV TEXT MODAL ================= */}
       {isPasteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setIsPasteModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[86vh] overflow-y-auto animate-modal-pop">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
                 <ClipboardList className="w-5 h-5 text-indigo-400" />
@@ -1229,8 +1237,12 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
 
       {/* ================= BANK RULES MANAGER MODAL ================= */}
       {isRulesModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setIsRulesModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 max-h-[86vh] overflow-y-auto animate-modal-pop">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="flex items-center gap-2.5">
                 <SettingsIcon className="w-5 h-5 text-indigo-400" />

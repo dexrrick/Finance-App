@@ -40,16 +40,28 @@ export const ScrollHeader: React.FC<ScrollHeaderProps> = ({
   }, []);
 
   // Calculate sticky top offset based on navigation bar position
-  const topStickyClass = tabPosition === 'top' ? 'top-14' : 'top-0';
+  const topStickyClass =
+    tabPosition === 'top'
+      ? 'top-[calc(3.5rem+env(safe-area-inset-top,0px))]'
+      : 'top-0';
+
+  const safeAreaPadding =
+    tabPosition === 'bottom'
+      ? 'pt-[calc(0.6rem+env(safe-area-inset-top,0px))]'
+      : 'pt-2.5';
 
   return (
     <div
-      className={`sticky ${topStickyClass} z-30 transition-all duration-300 -mx-3 sm:-mx-6 px-3 sm:px-6 mb-3 ${
+      style={{
+        WebkitBackdropFilter: isScrolled ? 'blur(24px) saturate(190%)' : 'none',
+        backdropFilter: isScrolled ? 'blur(24px) saturate(190%)' : 'none',
+      }}
+      className={`sticky ${topStickyClass} z-30 transition-all duration-300 -mx-3 sm:-mx-6 px-3 sm:px-6 mb-3 ${safeAreaPadding} ${
         isScrolled
           ? isLight
-            ? 'bg-[#f4f6f8]/92 border-b border-slate-200/90 shadow-xs backdrop-blur-md py-2.5'
-            : 'bg-[#121824]/92 border-b border-[#263447]/90 shadow-xs backdrop-blur-md py-2.5'
-          : 'bg-transparent border-b border-transparent py-2'
+            ? 'bg-[#f4f6f8]/85 border-b border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] pb-2.5'
+            : 'bg-[#121824]/85 border-b border-white/10 shadow-[0_4px_25px_rgba(0,0,0,0.4)] pb-2.5'
+          : 'bg-transparent border-b border-transparent pb-2'
       } ${className}`}
     >
       <div className="flex items-center justify-between gap-3 max-w-5xl mx-auto">
