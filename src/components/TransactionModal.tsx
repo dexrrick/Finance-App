@@ -440,7 +440,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         onClick={handleSmoothClose}
       />
       <div
-        className={`relative z-10 border w-full max-w-2xl shadow-2xl overflow-hidden transition-all duration-200 gpu-layer rounded-2xl max-h-[86vh] sm:max-h-[88vh] flex flex-col ${
+        className={`relative z-10 border w-full max-w-lg sm:max-w-2xl shadow-2xl overflow-hidden overflow-x-hidden transition-all duration-200 gpu-layer rounded-2xl max-h-[86vh] sm:max-h-[88vh] flex flex-col ${
           isClosing
             ? 'scale-95 opacity-0'
             : 'animate-modal-pop'
@@ -489,7 +489,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
         </div>
 
-        <form onSubmit={handleFormSubmit} className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={handleFormSubmit} className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto overflow-x-hidden flex-1 w-full max-w-full">
           {/* ================= SIMPLE MODE ================= */}
           {!isAdvanced ? (
             <div className="space-y-3.5">
@@ -867,26 +867,27 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           ) : (
             /* ================= ADVANCED DEBIT / CREDIT JOURNAL MODE ================= */
             <div className="space-y-3.5">
-              {/* Description & Date Grid for Advanced Mode */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div className="sm:col-span-2">
-                  <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
-                    isLight ? 'text-slate-700' : 'text-slate-400'
-                  }`}>
-                    Description / Memo
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Monthly Salary, Rent, Adjustments"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className={`w-full border rounded-xl px-3 py-1.5 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 ${
-                      isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-950 border-slate-700 text-slate-200 placeholder-slate-500'
-                    }`}
-                  />
-                </div>
+              {/* Description / Memo Row */}
+              <div>
+                <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-400'
+                }`}>
+                  Description / Memo
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., Monthly Salary, Rent, Adjustments"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className={`w-full border rounded-xl px-3 py-1.5 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-950 border-slate-700 text-slate-200 placeholder-slate-500'
+                  }`}
+                />
+              </div>
 
+              {/* Date & Currency Row (Currency on the right side of Date without full name) */}
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
                     isLight ? 'text-slate-700' : 'text-slate-400'
@@ -903,78 +904,75 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                     }`}
                   />
                 </div>
+
+                <div>
+                  <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}>
+                    Currency
+                  </label>
+                  <select
+                    value={selectedCurrency}
+                    onChange={(e) => handleCurrencyChange(e.target.value)}
+                    className={`w-full border rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold focus:border-indigo-500 outline-none cursor-pointer ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                    }`}
+                  >
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} ({c.symbol})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Multi-Currency Selector for Debit & Credit Mode */}
-              <div className={`p-3 rounded-xl border space-y-2 ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
-              }`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <label className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Currency:</label>
-                    <select
-                      value={selectedCurrency}
-                      onChange={(e) => handleCurrencyChange(e.target.value)}
-                      className={`border rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold focus:border-indigo-500 outline-none cursor-pointer ${
-                        isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+              {/* Multi-Currency FX Rate Bar (shown only when foreign currency is selected) */}
+              {selectedCurrency !== baseCurrency && (
+                <div className={`p-2.5 rounded-xl border space-y-2 ${
+                  isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                }`}>
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className={`text-[11px] ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                      Rate: 1 {selectedCurrency} = <strong className="font-mono text-emerald-500">{exchangeRate}</strong> {baseCurrency}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingRate(!isEditingRate)}
+                      className={`text-[11px] font-semibold underline ${
+                        isLight ? 'text-indigo-600 hover:text-indigo-700' : 'text-indigo-400 hover:text-indigo-300'
                       }`}
                     >
-                      {SUPPORTED_CURRENCIES.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} ({c.symbol}) - {c.name}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedCurrency !== baseCurrency && (
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                        isLight ? 'text-indigo-700 bg-indigo-50 border-indigo-200' : 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20'
-                      }`}>
-                        Multi-Currency ({selectedCurrency})
-                      </span>
-                    )}
+                      {isEditingRate ? 'Done' : 'Adjust Rate'}
+                    </button>
                   </div>
 
-                  {selectedCurrency !== baseCurrency && (
-                    <div className={`flex items-center gap-2 text-xs ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-                      <span>Rate: 1 {selectedCurrency} = {exchangeRate} {baseCurrency}</span>
+                  {isEditingRate && (
+                    <div className={`flex items-center gap-2 pt-2 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
+                      <span className={`text-[11px] shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Custom Rate:</span>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        min="0.0001"
+                        value={customRateInput}
+                        onChange={(e) => handleCustomRateChange(e.target.value)}
+                        className={`flex-1 border rounded-lg px-2.5 py-1 text-xs font-mono ${
+                          isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                        }`}
+                      />
                       <button
                         type="button"
-                        onClick={() => setIsEditingRate(!isEditingRate)}
-                        className={`text-xs font-semibold underline ${
-                          isLight ? 'text-indigo-600 hover:text-indigo-700' : 'text-indigo-400 hover:text-indigo-300'
+                        onClick={handleResetRate}
+                        className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                          isLight ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                         }`}
                       >
-                        {isEditingRate ? 'Done' : 'Adjust Rate'}
+                        Reset
                       </button>
                     </div>
                   )}
                 </div>
-
-                {selectedCurrency !== baseCurrency && isEditingRate && (
-                  <div className={`flex items-center gap-2 pt-2 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
-                    <span className={`text-[11px] shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Custom Rate:</span>
-                    <input
-                      type="number"
-                      step="0.0001"
-                      min="0.0001"
-                      value={customRateInput}
-                      onChange={(e) => handleCustomRateChange(e.target.value)}
-                      className={`flex-1 border rounded-lg px-2.5 py-1 text-xs font-mono ${
-                        isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
-                      }`}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleResetRate}
-                      className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
-                        isLight ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                      }`}
-                    >
-                      Reset
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Journal Legs</span>
@@ -991,7 +989,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </div>
 
               {/* Legs Table */}
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-72 overflow-y-auto overflow-x-hidden pr-1 w-full max-w-full">
                 {legs.map((leg, index) => {
                   const currSymbol = CurrencyService.getCurrencyInfo(selectedCurrency).symbol;
                   const convertedAmt = round2((leg.amount || 0) * exchangeRate);
@@ -999,159 +997,165 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   return (
                     <div
                       key={leg.id}
-                      className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2.5 border rounded-xl ${
+                      className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2.5 border rounded-xl w-full max-w-full overflow-hidden ${
                         isLight ? 'bg-slate-50/80 border-slate-200' : 'bg-slate-950/90 border-slate-800'
                       }`}
                     >
-                      {/* Dr / Cr Toggle */}
-                      <div className={`flex rounded-lg overflow-hidden border shrink-0 ${
-                        isLight ? 'border-slate-300 bg-slate-100' : 'border-slate-700 bg-slate-900'
-                      }`}>
-                        <button
-                          type="button"
-                          onClick={() => handleLegChange(index, 'type', 'DEBIT')}
-                          className={`px-2.5 py-1.5 text-xs font-bold transition-colors ${
-                            leg.type === 'DEBIT'
-                              ? 'bg-emerald-600 !text-white text-white'
-                              : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
-                          }`}
-                        >
-                          DEBIT
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleLegChange(index, 'type', 'CREDIT')}
-                          className={`px-2.5 py-1.5 text-xs font-bold transition-colors ${
-                            leg.type === 'CREDIT'
-                              ? 'bg-sky-600 !text-white text-white'
-                              : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
-                          }`}
-                        >
-                          CREDIT
-                        </button>
-                      </div>
+                      {/* On mobile: row 1 has Dr/Cr Toggle + Account Select */}
+                      <div className="flex items-center gap-2 w-full sm:w-auto flex-1 min-w-0">
+                        {/* Dr / Cr Toggle */}
+                        <div className={`flex rounded-lg overflow-hidden border shrink-0 ${
+                          isLight ? 'border-slate-300 bg-slate-100' : 'border-slate-700 bg-slate-900'
+                        }`}>
+                          <button
+                            type="button"
+                            onClick={() => handleLegChange(index, 'type', 'DEBIT')}
+                            className={`px-2 py-1 text-[11px] font-bold transition-colors ${
+                              leg.type === 'DEBIT'
+                                ? 'bg-emerald-600 !text-white text-white'
+                                : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            DEBIT
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleLegChange(index, 'type', 'CREDIT')}
+                            className={`px-2 py-1 text-[11px] font-bold transition-colors ${
+                              leg.type === 'CREDIT'
+                                ? 'bg-sky-600 !text-white text-white'
+                                : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            CREDIT
+                          </button>
+                        </div>
 
-                      {/* Account Selector */}
-                      <div className="flex-1 min-w-[180px]">
-                        <select
-                          value={leg.accountId}
-                          onChange={(e) => handleLegChange(index, 'accountId', e.target.value)}
-                          required
-                          className={`w-full border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
-                            isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-slate-200'
-                          }`}
-                        >
-                          <option value="">-- Select Account --</option>
-                          <optgroup label="Assets (1000s)">
-                            {assetAccounts.map((a) => (
-                              <option key={a.id} value={a.id}>
-                                {a.code} - {a.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Liabilities (2000s)">
-                            {liabilityAccounts.map((a) => (
-                              <option key={a.id} value={a.id}>
-                                {a.code} - {a.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Equity (3000s)">
-                            {equityAccounts.map((a) => (
-                              <option key={a.id} value={a.id}>
-                                {a.code} - {a.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Revenue / Income (4000s)">
-                            {revenueAccounts.map((a) => (
-                              <option key={a.id} value={a.id}>
-                                {a.code} - {a.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Expenses (5000s)">
-                            {expenseAccounts.map((a) => (
-                              <option key={a.id} value={a.id}>
-                                {a.code} - {a.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                          {otherIncomeAccounts.length > 0 && (
-                            <optgroup label="Other Income (6000s)">
-                              {otherIncomeAccounts.map((a) => (
+                        {/* Account Selector */}
+                        <div className="flex-1 min-w-0">
+                          <select
+                            value={leg.accountId}
+                            onChange={(e) => handleLegChange(index, 'accountId', e.target.value)}
+                            required
+                            className={`w-full border rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-indigo-500 truncate ${
+                              isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-slate-200'
+                            }`}
+                          >
+                            <option value="">-- Select Account --</option>
+                            <optgroup label="Assets (1000s)">
+                              {assetAccounts.map((a) => (
                                 <option key={a.id} value={a.id}>
                                   {a.code} - {a.name}
                                 </option>
                               ))}
                             </optgroup>
-                          )}
-                          {otherExpenseAccounts.length > 0 && (
-                            <optgroup label="Other Expenses (7000s)">
-                              {otherExpenseAccounts.map((a) => (
+                            <optgroup label="Liabilities (2000s)">
+                              {liabilityAccounts.map((a) => (
                                 <option key={a.id} value={a.id}>
                                   {a.code} - {a.name}
                                 </option>
                               ))}
                             </optgroup>
-                          )}
-                        </select>
+                            <optgroup label="Equity (3000s)">
+                              {equityAccounts.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.code} - {a.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="Revenue / Income (4000s)">
+                              {revenueAccounts.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.code} - {a.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="Expenses (5000s)">
+                              {expenseAccounts.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.code} - {a.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                            {otherIncomeAccounts.length > 0 && (
+                              <optgroup label="Other Income (6000s)">
+                                {otherIncomeAccounts.map((a) => (
+                                  <option key={a.id} value={a.id}>
+                                    {a.code} - {a.name}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                            {otherExpenseAccounts.length > 0 && (
+                              <optgroup label="Other Expenses (7000s)">
+                                {otherExpenseAccounts.map((a) => (
+                                  <option key={a.id} value={a.id}>
+                                    {a.code} - {a.name}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </select>
+                        </div>
                       </div>
 
-                      {/* Amount with Dual Currency Display */}
-                      <div className="w-32 relative">
-                        <span className="absolute left-2.5 top-1.5 text-slate-400 text-xs font-semibold">
-                          {currSymbol}
-                        </span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          required
-                          placeholder="0.00"
-                          value={leg.amount || ''}
-                          onChange={(e) =>
-                            handleLegChange(index, 'amount', parseFloat(e.target.value) || 0)
-                          }
-                          className={`w-full border rounded-lg pl-7 pr-2 py-1.5 text-xs font-mono font-medium focus:outline-none focus:border-indigo-500 text-right ${
-                            isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
-                          }`}
-                        />
-                        {selectedCurrency !== baseCurrency && (leg.amount || 0) > 0 && (
-                          <div className={`text-[10px] font-mono text-right pr-1 pt-0.5 truncate ${
-                            isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400'
-                          }`}>
-                            ≈ {currencySymbol}{convertedAmt.toFixed(2)}
-                          </div>
+                      {/* On mobile: row 2 has Amount + Memo + Remove */}
+                      <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0">
+                        {/* Amount with Dual Currency Display */}
+                        <div className="w-28 sm:w-32 shrink-0 relative">
+                          <span className="absolute left-2 top-1 text-slate-400 text-xs font-semibold">
+                            {currSymbol}
+                          </span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            required
+                            placeholder="0.00"
+                            value={leg.amount || ''}
+                            onChange={(e) =>
+                              handleLegChange(index, 'amount', parseFloat(e.target.value) || 0)
+                            }
+                            className={`w-full border rounded-lg pl-6 pr-2 py-1 text-xs font-mono font-medium focus:outline-none focus:border-indigo-500 text-right ${
+                              isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                            }`}
+                          />
+                          {selectedCurrency !== baseCurrency && (leg.amount || 0) > 0 && (
+                            <div className={`text-[9px] font-mono text-right pr-1 pt-0.5 truncate ${
+                              isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400'
+                            }`}>
+                              ≈ {currencySymbol}{convertedAmt.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Line Memo */}
+                        <div className="flex-1 min-w-0">
+                          <input
+                            type="text"
+                            placeholder="Memo (optional)"
+                            value={leg.memo || ''}
+                            onChange={(e) => handleLegChange(index, 'memo', e.target.value)}
+                            className={`w-full border rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-indigo-500 truncate ${
+                              isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-900 border-slate-700 text-slate-300 placeholder-slate-600'
+                            }`}
+                          />
+                        </div>
+
+                        {/* Remove button */}
+                        {legs.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveLeg(index)}
+                            className={`p-1.5 rounded transition-colors shrink-0 ${
+                              isLight ? 'text-slate-400 hover:text-rose-600' : 'text-slate-500 hover:text-rose-400'
+                            }`}
+                            title="Remove row"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
-
-                      {/* Line Memo */}
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          placeholder="Line memo (optional)"
-                          value={leg.memo || ''}
-                          onChange={(e) => handleLegChange(index, 'memo', e.target.value)}
-                          className={`w-full border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 ${
-                            isLight ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400' : 'bg-slate-900 border-slate-700 text-slate-300 placeholder-slate-600'
-                          }`}
-                        />
-                      </div>
-
-                      {/* Remove button */}
-                      {legs.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveLeg(index)}
-                          className={`p-1.5 rounded transition-colors self-center ${
-                            isLight ? 'text-slate-400 hover:text-rose-600' : 'text-slate-500 hover:text-rose-400'
-                          }`}
-                          title="Remove row"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
                   );
                 })}

@@ -31,7 +31,7 @@ export const ScrollHeader: React.FC<ScrollHeaderProps> = ({
   useEffect(() => {
     const handleScroll = () => {
       const y = window.scrollY || document.documentElement.scrollTop || 0;
-      setIsScrolled(y > 20);
+      setIsScrolled(y > 30);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -47,74 +47,81 @@ export const ScrollHeader: React.FC<ScrollHeaderProps> = ({
 
   const safeAreaPadding =
     tabPosition === 'bottom'
-      ? 'pt-[calc(0.6rem+env(safe-area-inset-top,0px))]'
-      : 'pt-2.5';
+      ? 'pt-[calc(0.45rem+env(safe-area-inset-top,0px))]'
+      : 'pt-2';
 
   return (
-    <div
-      style={{
-        WebkitBackdropFilter: isScrolled ? 'blur(24px) saturate(190%)' : 'none',
-        backdropFilter: isScrolled ? 'blur(24px) saturate(190%)' : 'none',
-      }}
-      className={`sticky ${topStickyClass} z-30 transition-all duration-300 -mx-3 sm:-mx-6 px-3 sm:px-6 mb-3 ${safeAreaPadding} ${
-        isScrolled
-          ? isLight
-            ? 'bg-[#f4f6f8]/85 border-b border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] pb-2.5'
-            : 'bg-[#121824]/85 border-b border-white/10 shadow-[0_4px_25px_rgba(0,0,0,0.4)] pb-2.5'
-          : 'bg-transparent border-b border-transparent pb-2'
-      } ${className}`}
-    >
-      <div className={`flex flex-col sm:flex-row sm:items-center justify-between max-w-5xl mx-auto transition-all duration-300 ${
-        isScrolled ? 'gap-0 sm:gap-3' : 'gap-2.5 sm:gap-3'
-      }`}>
-        {/* Top Row on mobile, Left side on desktop: Icon + Title + Badge */}
-        <div className="flex items-center gap-2.5 min-w-0 transition-all duration-300">
-          {icon && (
-            <div
-              className={`transition-all duration-300 shrink-0 ${
-                isScrolled ? 'scale-85 opacity-80' : 'scale-100 opacity-100'
-              }`}
-            >
-              {icon}
-            </div>
-          )}
-
-          <div className="min-w-0 flex items-center gap-2">
-            <h1
-              className={`font-bold tracking-tight transition-all duration-300 ${
-                isScrolled
-                  ? 'text-sm sm:text-base font-semibold truncate'
-                  : 'text-xl sm:text-2xl font-bold'
-              } ${isLight ? 'text-slate-900' : 'text-slate-100'}`}
-            >
-              {title}
-            </h1>
-
-            {badge && (
+    <div className={`mb-3 ${className}`}>
+      {/* Pinned Sticky Header Bar: Constant height with zero layout-shift or stutter */}
+      <div
+        style={{
+          WebkitBackdropFilter: isScrolled ? 'blur(28px) saturate(200%)' : 'none',
+          backdropFilter: isScrolled ? 'blur(28px) saturate(200%)' : 'none',
+        }}
+        className={`sticky ${topStickyClass} z-30 transition-[background-color,border-color,box-shadow] duration-200 -mx-3 sm:-mx-6 px-3 sm:px-6 ${safeAreaPadding} ${
+          isScrolled
+            ? isLight
+              ? 'bg-[#f4f6f8]/85 border-b border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] pb-2.5'
+              : 'bg-[#121824]/85 border-b border-white/10 shadow-[0_4px_25px_rgba(0,0,0,0.4)] pb-2.5'
+            : 'bg-transparent border-b border-transparent pb-1'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-3 max-w-5xl mx-auto h-9">
+          {/* Main Title & Icon */}
+          <div className="flex items-center gap-2.5 min-w-0 flex-1 transition-all duration-200">
+            {icon && (
               <div
-                className={`transition-all duration-300 shrink-0 ${
-                  isScrolled ? 'scale-90' : 'scale-100'
+                className={`transition-transform duration-200 shrink-0 ${
+                  isScrolled ? 'scale-85 opacity-80' : 'scale-100 opacity-100'
                 }`}
               >
-                {badge}
+                {icon}
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Action Buttons: Sub-row below title on mobile, right side on desktop. Smoothly collapsed when scrolled */}
-        {actions && (
-          <div
-            className={`flex items-center gap-2 shrink-0 transition-all duration-300 ease-in-out ${
-              isScrolled
-                ? 'opacity-0 pointer-events-none -mt-1 max-h-0 scale-95 overflow-hidden invisible'
-                : 'opacity-100 pointer-events-auto scale-100 max-h-20 visible'
-            }`}
-          >
-            {actions}
+            <div className="min-w-0 flex items-center gap-2 flex-1">
+              <h1
+                className={`font-bold tracking-tight transition-all duration-200 truncate ${
+                  isScrolled
+                    ? 'text-sm sm:text-base font-semibold'
+                    : 'text-xl sm:text-2xl font-bold'
+                } ${isLight ? 'text-slate-900' : 'text-slate-100'}`}
+              >
+                {title}
+              </h1>
+
+              {badge && (
+                <div
+                  className={`transition-transform duration-200 shrink-0 ${
+                    isScrolled ? 'scale-90' : 'scale-100'
+                  }`}
+                >
+                  {badge}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Desktop Actions: Side-by-side with title on sm+ screens */}
+          {actions && (
+            <div
+              className={`hidden sm:flex items-center gap-2 shrink-0 transition-opacity duration-200 ${
+                isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+              }`}
+            >
+              {actions}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Mobile Actions: Rendered directly below the title in normal scroll flow.
+          Naturally scrolls off-screen without any height collapse or layout jitter */}
+      {actions && (
+        <div className="sm:hidden pt-2 pb-0.5 flex items-center gap-2 flex-wrap">
+          {actions}
+        </div>
+      )}
     </div>
   );
 };
