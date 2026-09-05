@@ -935,7 +935,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => handleThemeToggle('light')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                isLight ? 'bg-amber-500 text-white border-amber-600 shadow' : 'bg-slate-800 text-slate-400 border-slate-700'
+                isLight ? 'bg-blue-600 !text-white text-white border-blue-600 shadow' : 'bg-slate-800 text-slate-400 border-slate-700'
               }`}
             >
               <Sun className="w-3.5 h-3.5 text-amber-300" />
@@ -944,10 +944,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               onClick={() => handleThemeToggle('dark')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                !isLight ? 'bg-indigo-600 !text-white text-white border-indigo-500 shadow' : 'bg-slate-100 text-slate-700 border-slate-200'
+                !isLight ? 'bg-sky-600 !text-white text-white border-sky-500 shadow' : 'bg-slate-100 text-slate-700 border-slate-200'
               }`}
             >
-              <Moon className="w-3.5 h-3.5 text-indigo-200" />
+              <Moon className="w-3.5 h-3.5 text-sky-200" />
               <span>Night</span>
             </button>
           </div>

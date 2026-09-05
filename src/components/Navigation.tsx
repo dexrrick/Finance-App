@@ -64,8 +64,8 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   // iOS Liquid Glass styling
   const glassClasses = isLight
-    ? 'bg-white/80 border-slate-200/80 text-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]'
-    : 'bg-[#080c14]/75 border-white/[0.12] text-slate-100 shadow-[0_-10px_35px_rgba(0,0,0,0.6)]';
+    ? 'bg-white/85 border-slate-200/90 text-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]'
+    : 'bg-[#121824]/85 border-[#263447]/90 text-slate-100 shadow-[0_-10px_35px_rgba(0,0,0,0.5)]';
 
   return (
     <nav
@@ -96,8 +96,8 @@ export const Navigation: React.FC<NavigationProps> = ({
                 className={`relative flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all duration-200 active:scale-90 ${
                   isActive
                     ? isLight
-                      ? 'text-indigo-600 font-semibold'
-                      : 'text-white font-semibold'
+                      ? 'text-blue-600 font-semibold'
+                      : 'text-sky-400 font-semibold'
                     : isLight
                     ? 'text-slate-500 hover:text-slate-900'
                     : 'text-slate-400 hover:text-slate-200'
@@ -107,8 +107,8 @@ export const Navigation: React.FC<NavigationProps> = ({
                   className={`p-1.5 rounded-xl transition-all duration-200 ${
                     isActive
                       ? isLight
-                        ? 'bg-indigo-500/15 text-indigo-600 scale-105 shadow-sm'
-                        : 'bg-white/[0.12] text-white scale-105 shadow-[0_0_12px_rgba(255,255,255,0.15)] border border-white/10'
+                        ? 'bg-blue-500/15 text-blue-600 scale-105 shadow-sm'
+                        : 'bg-sky-500/15 text-sky-400 scale-105 shadow-[0_0_12px_rgba(56,189,248,0.25)] border border-sky-400/30'
                       : 'hover:bg-white/5'
                   }`}
                 >
@@ -118,8 +118,8 @@ export const Navigation: React.FC<NavigationProps> = ({
                   className={`text-[10px] tracking-tight mt-0.5 truncate max-w-full transition-colors ${
                     isActive
                       ? isLight
-                        ? 'text-indigo-600 font-semibold'
-                        : 'text-white font-medium'
+                        ? 'text-blue-600 font-semibold'
+                        : 'text-sky-400 font-medium'
                       : isLight
                       ? 'text-slate-500'
                       : 'text-slate-400'
@@ -130,7 +130,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 {isActive && (
                   <span
                     className={`absolute bottom-0 w-1 h-1 rounded-full ${
-                      isLight ? 'bg-indigo-600' : 'bg-indigo-400 shadow-[0_0_6px_#818cf8]'
+                      isLight ? 'bg-blue-600' : 'bg-sky-400 shadow-[0_0_6px_#38bdf8]'
                     }`}
                   />
                 )}

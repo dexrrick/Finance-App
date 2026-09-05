@@ -25,17 +25,86 @@
   }
 
   body.theme-dark {
-    background-color: #080c14;
+    background-color: #121824;
     color: #f1f5f9;
   }
 
   body.theme-light {
-    background-color: #f8fafc;
+    background-color: #f4f6f8;
     color: #0f172a;
   }
 }
 
-/* ================= DAY MODE (LIGHT THEME) OVERRIDES ================= */
+/* ================= YNAB NIGHT MODE (DARK THEME) ================= */
+body.theme-dark {
+  background-color: #121824 !important;
+  color: #f1f5f9;
+}
+
+body.theme-dark .bg-slate-950,
+body.theme-dark .bg-slate-900,
+body.theme-dark .bg-slate-900\/90,
+body.theme-dark .bg-slate-900\/95,
+body.theme-dark .bg-slate-900\/80,
+body.theme-dark .bg-slate-950\/80,
+body.theme-dark .bg-slate-950\/90,
+body.theme-dark .bg-slate-950\/60,
+body.theme-dark .bg-\[\#080c14\] {
+  background-color: #1a2332 !important;
+  color: #f1f5f9;
+}
+
+body.theme-dark .border-slate-800,
+body.theme-dark .border-slate-800\/80,
+body.theme-dark .border-slate-800\/90,
+body.theme-dark .border-slate-800\/60,
+body.theme-dark .border-slate-700,
+body.theme-dark .border-slate-700\/80,
+body.theme-dark .border-slate-700\/60,
+body.theme-dark .border-slate-800\/40 {
+  border-color: #263447 !important;
+}
+
+body.theme-dark .bg-slate-800,
+body.theme-dark .bg-slate-800\/80,
+body.theme-dark .bg-slate-800\/60,
+body.theme-dark .bg-slate-800\/50,
+body.theme-dark .bg-slate-800\/40 {
+  background-color: #243044 !important;
+  color: #f1f5f9;
+}
+
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea {
+  background-color: #151d2a !important;
+  border-color: #2b3a4f !important;
+  color: #f8fafc !important;
+}
+
+body.theme-dark input:focus,
+body.theme-dark select:focus,
+body.theme-dark textarea:focus {
+  border-color: #38bdf8 !important;
+  outline-color: #38bdf8 !important;
+}
+
+body.theme-dark ::-webkit-scrollbar-track {
+  background: rgba(18, 24, 36, 0.9);
+}
+body.theme-dark ::-webkit-scrollbar-thumb {
+  background: rgba(43, 58, 79, 0.8);
+}
+body.theme-dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
+}
+
+/* ================= YNAB DAY MODE (LIGHT THEME) ================= */
+body.theme-light {
+  background-color: #f4f6f8 !important;
+  color: #0f172a;
+}
+
 body.theme-light .bg-slate-950,
 body.theme-light .bg-slate-900,
 body.theme-light .bg-slate-900\/90,
@@ -43,7 +112,8 @@ body.theme-light .bg-slate-900\/95,
 body.theme-light .bg-slate-900\/80,
 body.theme-light .bg-slate-950\/80,
 body.theme-light .bg-slate-950\/90,
-body.theme-light .bg-slate-950\/60 {
+body.theme-light .bg-slate-950\/60,
+body.theme-light .bg-\[\#080c14\] {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }
@@ -54,7 +124,8 @@ body.theme-light .border-slate-800\/90,
 body.theme-light .border-slate-800\/60,
 body.theme-light .border-slate-700,
 body.theme-light .border-slate-700\/80,
-body.theme-light .border-slate-700\/60 {
+body.theme-light .border-slate-700\/60,
+body.theme-light .border-slate-800\/40 {
   border-color: #e2e8f0 !important;
 }
 
@@ -63,7 +134,7 @@ body.theme-light .bg-slate-800\/80,
 body.theme-light .bg-slate-800\/60,
 body.theme-light .bg-slate-800\/50,
 body.theme-light .bg-slate-800\/40 {
-  background-color: #f1f5f9 !important;
+  background-color: #f8fafc !important;
   color: #0f172a !important;
 }
 
@@ -85,6 +156,18 @@ body.theme-light .text-slate-500 {
   color: #64748b !important;
 }
 
+/* Ensure colored action buttons keep readable white text in light mode */
+body.theme-light button.bg-indigo-600,
+body.theme-light button.bg-blue-600,
+body.theme-light button.bg-emerald-600,
+body.theme-light button.bg-rose-600,
+body.theme-light .bg-indigo-600,
+body.theme-light .bg-blue-600,
+body.theme-light .bg-emerald-600,
+body.theme-light .bg-rose-600 {
+  color: #ffffff !important;
+}
+
 body.theme-light input,
 body.theme-light select,
 body.theme-light textarea {
@@ -93,10 +176,17 @@ body.theme-light textarea {
   color: #0f172a !important;
 }
 
+body.theme-light input:focus,
+body.theme-light select:focus,
+body.theme-light textarea:focus {
+  border-color: #2563eb !important;
+  outline-color: #2563eb !important;
+}
+
 body.theme-light .shadow-xl,
 body.theme-light .shadow-2xl,
 body.theme-light .shadow-lg {
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08) !important;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04) !important;
 }
 
 /* Custom scrollbar for transaction lists and ledger */
@@ -105,14 +195,24 @@ body.theme-light .shadow-lg {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(18, 24, 36, 0.8);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.5);
+  background: rgba(43, 58, 79, 0.6);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.8);
+  background: rgba(56, 189, 248, 0.6);
+}
+
+body.theme-light ::-webkit-scrollbar-track {
+  background: rgba(244, 246, 248, 0.9);
+}
+body.theme-light ::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.8);
+}
+body.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.9);
 }
 
 /* ================= MINECRAFT VOXEL ANIMATIONS ================= */

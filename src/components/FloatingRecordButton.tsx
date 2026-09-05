@@ -32,7 +32,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
   const popoverButtonClass = `flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border shadow-xl text-xs font-semibold backdrop-blur-md transition-all active:scale-95 ${
     isLight
       ? 'bg-white/95 hover:bg-slate-50 text-slate-800 border-slate-200 shadow-slate-200/50'
-      : 'bg-slate-800/95 hover:bg-slate-700 text-slate-100 border-slate-700'
+      : 'bg-[#1a2332]/95 hover:bg-[#243044] text-slate-100 border-[#263447]'
   }`;
 
   return (
@@ -99,7 +99,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
         className={`w-14 h-14 rounded-full flex items-center justify-center !text-white text-white shadow-2xl transition-all duration-200 active:scale-90 ${
           isOpen
             ? 'bg-slate-800 border-2 border-slate-600 rotate-90'
-            : 'bg-gradient-to-tr from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-indigo-600/40'
+            : 'bg-gradient-to-tr from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-blue-600/40'
         }`}
       >
         {isOpen ? <X className="w-6 h-6 text-slate-300" /> : <Plus className="w-7 h-7 stroke-[2.5] !text-white text-white stroke-white" />}

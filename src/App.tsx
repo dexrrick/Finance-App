@@ -260,7 +260,7 @@ export function App() {
   return (
     <div
       className={`min-h-screen flex flex-col transition-colors duration-200 ${
-        isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#080c14] text-slate-100'
+        isLight ? 'bg-[#f4f6f8] text-slate-900' : 'bg-[#121824] text-slate-100'
       }`}
     >
       {/* If Tab Position is configured as Top, render here */}
