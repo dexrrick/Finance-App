@@ -25,6 +25,8 @@ import { BankRulesEngine, DEFAULT_BANK_RULES } from '../core/bankRulesEngine';
 import { formatCurrency } from '../core/accounting';
 import { SearchableAccountSelect } from './SearchableAccountSelect';
 import { CurrencyService, SUPPORTED_CURRENCIES } from '../core/currencyService';
+import { ScrollHeader } from './ScrollHeader';
+import { useScrollLock } from '../core/useScrollLock';
 
 const STORAGE_KEY_RECON_SESSION = 'finance_bank_feed_session_v2';
 
@@ -119,6 +121,9 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
   const [isColumnMapperOpen, setIsColumnMapperOpen] = useState(false);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
+
+  const isLight = settings.theme === 'light';
+  useScrollLock(isRulesModalOpen || isColumnMapperOpen || isPasteModalOpen);
 
   // Column Mapping state
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>(() => storedSession?.columnMapping || {
@@ -504,32 +509,51 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Top Header & Bank Account Selection Bar */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white tracking-tight">Bank Feed & Reconciliation</h2>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
-                Auto-Match
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Review statement lines, match rules, and approve into your double-entry ledger.
-            </p>
-          </div>
+      {/* iOS-style Collapsible Header */}
+      <ScrollHeader
+        title="Bank Feed & Reconciliation"
+        isLight={isLight}
+        tabPosition={settings.tabPosition}
+        badge={
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
+            Auto-Match
+          </span>
+        }
+        actions={
+          <button
+            type="button"
+            onClick={() => setIsRulesModalOpen(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+              isLight
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span>Rules ({rules.length})</span>
+          </button>
+        }
+      />
 
-          {/* Bank Account Selector, Currency Selector & Rules */}
+      {/* Bank Account Selection & Currency Bar */}
+      <div className={`border rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3 ${
+        isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900/90 border-slate-800 text-white'
+      }`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
-              <span className="text-slate-400 text-[11px] font-medium">Reconciling:</span>
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs ${
+              isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-slate-950 border-slate-800 text-white'
+            }`}>
+              <span className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Reconciling:</span>
               <select
                 value={selectedBankAccountId}
                 onChange={(e) => setSelectedBankAccountId(e.target.value)}
-                className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer text-xs"
+                className={`bg-transparent font-semibold focus:outline-none cursor-pointer text-xs ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}
               >
                 {bankAccounts.map((acc) => (
-                  <option key={acc.id} value={acc.id} className="bg-slate-900 text-white">
+                  <option key={acc.id} value={acc.id} className={isLight ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}>
                     {acc.code} - {acc.name}
                   </option>
                 ))}
@@ -537,32 +561,27 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
             </div>
 
             {/* Statement Currency Selector */}
-            <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
-              <span className="text-slate-400 text-[11px] font-medium">Currency:</span>
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs ${
+              isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-slate-950 border-slate-800 text-white'
+            }`}>
+              <span className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Currency:</span>
               <select
                 value={feedCurrency}
                 onChange={(e) => {
                   setFeedCurrency(e.target.value);
                   setDetectedCurrencyNotice('');
                 }}
-                className="bg-transparent text-white font-bold focus:outline-none cursor-pointer text-xs font-mono"
+                className={`bg-transparent font-bold focus:outline-none cursor-pointer text-xs font-mono ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}
               >
                 {SUPPORTED_CURRENCIES.map((c) => (
-                  <option key={c.code} value={c.code} className="bg-slate-900 text-white">
+                  <option key={c.code} value={c.code} className={isLight ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}>
                     {c.code} ({c.symbol})
                   </option>
                 ))}
               </select>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsRulesModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span>Rules ({rules.length})</span>
-            </button>
           </div>
         </div>
 

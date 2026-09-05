@@ -30,6 +30,8 @@ import {
   generateIncomeStatement,
 } from '../core/accounting';
 import { DEFAULT_DASHBOARD_CARDS } from '../storage/db';
+import { ScrollHeader } from './ScrollHeader';
+import { useScrollLock } from '../core/useScrollLock';
 
 interface DashboardProps {
   accounts: Account[];
@@ -53,6 +55,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const currency = settings.currencySymbol || '$';
   const isLight = settings.theme === 'light';
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
+
+  // Suspend background scrolling when modal is open
+  useScrollLock(isCustomizeModalOpen);
 
   // Load cards config
   const cardsConfig: DashboardCardConfig[] = settings.dashboardCards || DEFAULT_DASHBOARD_CARDS;
@@ -604,29 +609,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-4 pb-12">
-      {/* Top Bar with Customize Cards Action */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className={`text-xl font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
-            Financial Dashboard
-          </h1>
-          <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-            Overview of balances, net worth & cash flow
-          </p>
-        </div>
-
-        <button
-          onClick={() => setIsCustomizeModalOpen(true)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-            isLight
-              ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 shadow-sm'
-          }`}
-        >
-          <Sliders className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Customize Cards</span>
-        </button>
-      </div>
+      {/* Top Header with iOS-style Scroll-Collapse */}
+      <ScrollHeader
+        title="Financial Dashboard"
+        isLight={isLight}
+        tabPosition={settings.tabPosition}
+        actions={
+          <button
+            onClick={() => setIsCustomizeModalOpen(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              isLight
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 shadow-sm'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Customize Cards</span>
+          </button>
+        }
+      />
 
       {/* Render Cards according to custom user ordering and enabled status */}
       <div className="space-y-4">

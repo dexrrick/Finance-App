@@ -32,6 +32,8 @@ import { GoogleDriveSyncService } from '../storage/googleDrive';
 import { CurrencyService, SUPPORTED_CURRENCIES } from '../core/currencyService';
 import { getInitialDemoTransactions } from '../core/accounting';
 import { DEFAULT_ACCOUNTS } from '../core/accounts';
+import { ScrollHeader } from './ScrollHeader';
+import { useScrollLock } from '../core/useScrollLock';
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -71,6 +73,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   );
   const [isLockConfirmOpen, setIsLockConfirmOpen] = useState(false);
   const [isSampleConfirmOpen, setIsSampleConfirmOpen] = useState(false);
+  useScrollLock(isLockConfirmOpen || isSampleConfirmOpen);
   const [isRefreshingFx, setIsRefreshingFx] = useState(false);
   const [fxStatusMsg, setFxStatusMsg] = useState<string | null>(null);
 
@@ -279,19 +282,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         className="hidden"
       />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className={`text-xl font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
-            App Settings
-          </h1>
-          <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-            Customize navigation, backups, display & account
-          </p>
-        </div>
-        <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded border bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
-          v1.0.0
-        </span>
-      </div>
+      {/* iOS-style Collapsible Header */}
+      <ScrollHeader
+        title="App Settings"
+        isLight={isLight}
+        tabPosition={settings.tabPosition}
+        badge={
+          <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded border bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
+            v1.0.0
+          </span>
+        }
+      />
 
       {/* SECTION 1: GOOGLE ACCOUNT & NATIVE AUTH */}
       <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${

@@ -20,6 +20,8 @@ import {
 import { Account, AppSettings, Transaction } from '../core/types';
 import { formatCurrency } from '../core/accounting';
 import { GoogleDriveSyncService } from '../storage/googleDrive';
+import { ScrollHeader } from './ScrollHeader';
+import { useScrollLock } from '../core/useScrollLock';
 
 interface JournalViewProps {
   transactions: Transaction[];
@@ -59,6 +61,9 @@ export const JournalView: React.FC<JournalViewProps> = ({
   // Deletion confirmation modal state
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [txIdsToDelete, setTxIdsToDelete] = useState<string[]>([]);
+
+  // Suspend background scrolling when delete confirmation modal is open
+  useScrollLock(isDeleteConfirmOpen);
 
   // 1-time Undo deletion backup state
   const [deletedBackup, setDeletedBackup] = useState<Transaction[] | null>(null);
@@ -225,55 +230,45 @@ export const JournalView: React.FC<JournalViewProps> = ({
         </div>
       )}
 
-      {/* Header Bar */}
-      <div
-        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 border rounded-2xl p-4 sm:p-5 transition-all ${
-          isLight
-            ? 'bg-white border-slate-200 text-slate-900 shadow-sm'
-            : 'bg-slate-900/90 border-slate-800 text-white shadow-xl'
-        }`}
-      >
-        <div className="flex items-center gap-3">
+      {/* Header Bar with iOS-style Scroll Collapse */}
+      <ScrollHeader
+        title="General Ledger"
+        isLight={isLight}
+        tabPosition={settings.tabPosition}
+        icon={
           <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold border ${
+            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold border ${
               isLight
                 ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
                 : 'bg-indigo-600/20 border-indigo-500/30 text-indigo-400'
             }`}
           >
-            <BookOpen className="w-5 h-5" />
+            <BookOpen className="w-4 h-4" />
           </div>
-          <div>
-            <h2 className={`text-base sm:text-lg font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              General Ledger
-            </h2>
-            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              Audit trail with balanced debit and credit legs
-            </p>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => GoogleDriveSyncService.exportLedgerCsv(transactions, accounts)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
+                isLight
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+              }`}
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={onOpenNewTransaction}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 !text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span className="font-semibold !text-white">New Entry</span>
+            </button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => GoogleDriveSyncService.exportLedgerCsv(transactions, accounts)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
-              isLight
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-            }`}
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
-          <button
-            onClick={onOpenNewTransaction}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 !text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span className="font-semibold !text-white">New Entry</span>
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Search & Filter Bar */}
       <div

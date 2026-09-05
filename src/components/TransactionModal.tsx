@@ -13,6 +13,7 @@ import { Account, EntryLeg, Transaction } from '../core/types';
 import { formatCurrency, round2, validateTransaction } from '../core/accounting';
 import { CurrencyService, SUPPORTED_CURRENCIES } from '../core/currencyService';
 import { HapticsService } from '../core/haptics';
+import { useScrollLock } from '../core/useScrollLock';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -84,6 +85,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setIsClosing(false);
     }, 200);
   };
+
+  // Suspend background scrolling while modal is open
+  useScrollLock(isRendered);
 
   // Multi-Currency State
   const [selectedCurrency, setSelectedCurrency] = useState<string>(baseCurrency);
@@ -427,7 +431,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[80] overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-[80] overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 transition-opacity duration-200 ${
         isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100 animate-backdrop-fade'
       }`}
       onClick={(e) => {
@@ -435,17 +439,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       }}
     >
       <div
-        className={`border w-full max-w-2xl shadow-2xl overflow-hidden transition-all duration-200 gpu-layer rounded-t-3xl sm:rounded-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col ${
+        className={`border w-full max-w-2xl shadow-2xl overflow-hidden transition-all duration-200 gpu-layer rounded-2xl max-h-[86vh] sm:max-h-[88vh] flex flex-col ${
           isClosing
-            ? 'translate-y-full sm:scale-95 sm:opacity-0'
-            : 'animate-sheet-up sm:animate-modal-pop'
+            ? 'scale-95 opacity-0'
+            : 'animate-modal-pop'
         } ${
           isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
         }`}
       >
-        {/* Mobile Sheet Pull Indicator */}
-        <div className="w-12 h-1.5 bg-slate-400/40 rounded-full mx-auto mt-2.5 mb-1 sm:hidden shrink-0" />
-
         {/* Header */}
         <div className={`px-4 py-3 sm:px-6 sm:py-3.5 border-b flex items-center justify-between shrink-0 ${
           isLight ? 'border-slate-200 bg-slate-50/80 text-slate-900' : 'border-slate-800 bg-slate-950/60 text-white'

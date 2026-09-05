@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Account, AppDataBackup, AppSettings, Transaction, UserProfile, NavTabId } from './core/types';
 import { AppDatabase } from './storage/db';
 import { generateTrialBalance } from './core/accounting';
@@ -28,10 +28,25 @@ export function App() {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [visitedTabs, setVisitedTabs] = useState<Set<ActiveTab>>(() => new Set(['dashboard']));
+  const tabScrollPositions = useRef<Record<string, number>>({});
 
-  // GPU-accelerated tab change with View Transitions and View Keep-Alive
+  // Keep track of the active tab's scroll position in real time
+  useEffect(() => {
+    const handleScroll = () => {
+      tabScrollPositions.current[activeTab] = window.scrollY || document.documentElement.scrollTop || 0;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab]);
+
+  // Tab change handler with per-tab scroll isolation
   const handleTabChange = (newTab: ActiveTab) => {
     if (newTab === activeTab) return;
+
+    // 1. Record current tab's scroll position before un-rendering
+    tabScrollPositions.current[activeTab] = window.scrollY || document.documentElement.scrollTop || 0;
+
+    // 2. Add to visited tabs for keep-alive cache
     setVisitedTabs((prev) => {
       if (prev.has(newTab)) return prev;
       const next = new Set(prev);
@@ -39,12 +54,24 @@ export function App() {
       return next;
     });
 
+    // 3. Restore target tab's scroll position independently
+    const targetY = tabScrollPositions.current[newTab] || 0;
+
+    const performSwitch = () => {
+      setActiveTab(newTab);
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = targetY;
+        document.body.scrollTop = targetY;
+      });
+    };
+
     if (typeof document !== 'undefined' && 'startViewTransition' in document) {
       (document as any).startViewTransition(() => {
-        setActiveTab(newTab);
+        performSwitch();
       });
     } else {
-      setActiveTab(newTab);
+      performSwitch();
     }
   };
 

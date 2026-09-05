@@ -19,6 +19,7 @@ import {
   generateTrialBalance,
 } from '../core/accounting';
 import { exportToCSV } from '../storage/backup';
+import { ScrollHeader } from './ScrollHeader';
 
 interface ReportsViewProps {
   accounts: Account[];
@@ -187,52 +188,48 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ accounts, transactions
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header Bar */}
-      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border rounded-2xl p-5 shadow-sm transition-all ${
-        isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900/90 border-slate-800 text-white shadow-xl'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
+      {/* iOS-style Collapsing Header */}
+      <ScrollHeader
+        title="Financial Statements"
+        isLight={isLight}
+        tabPosition={settings.tabPosition}
+        icon={
+          <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
             isLight ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
           }`}>
-            <ShieldCheck className="w-5 h-5" />
+            <ShieldCheck className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className={`text-lg font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>Financial Statements</h2>
-              <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${
-                isLight ? 'bg-slate-100 text-indigo-700 border-slate-200' : 'bg-slate-800 text-indigo-400 border-slate-700'
-              }`}>
-                Base: {baseCurrency}
-              </span>
-            </div>
-            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              Audit-ready Balance Sheet, Income Statement (P&L), and Trial Balance
-            </p>
+        }
+        badge={
+          <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${
+            isLight ? 'bg-slate-100 text-indigo-700 border-slate-200' : 'bg-slate-800 text-indigo-400 border-slate-700'
+          }`}>
+            Base: {baseCurrency}
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCSVExport}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+              }`}
+            >
+              <FileSpreadsheet className={`w-3.5 h-3.5 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
+              <span>CSV Export</span>
+            </button>
+            <button
+              onClick={handlePrint}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+              }`}
+            >
+              <Printer className={`w-3.5 h-3.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`} />
+              <span>Print / PDF</span>
+            </button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCSVExport}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${
-              isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-            }`}
-          >
-            <FileSpreadsheet className={`w-3.5 h-3.5 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
-            CSV Export
-          </button>
-          <button
-            onClick={handlePrint}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${
-              isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-            }`}
-          >
-            <Printer className={`w-3.5 h-3.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`} />
-            Print / PDF
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Date Range Filter Bar */}
       <div className={`border rounded-2xl p-4 transition-all ${

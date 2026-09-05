@@ -51,9 +51,9 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
       {/* Expanded Quick Action Popover */}
       {isOpen && (
         <div className="mb-3 flex flex-col items-end gap-2 animate-fade-in-fast gpu-layer">
-          {/* Backdrop dismiss */}
+          {/* Backdrop dismiss - fully transparent */}
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs -z-10"
+            className="fixed inset-0 bg-transparent -z-10"
             onClick={() => setIsOpen(false)}
           />
 

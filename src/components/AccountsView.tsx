@@ -33,6 +33,8 @@ import {
   getSuggestedNextAccountCode,
 } from '../core/accounts';
 import { DEFAULT_ACCOUNT_COLUMNS } from '../storage/db';
+import { ScrollHeader } from './ScrollHeader';
+import { useScrollLock } from '../core/useScrollLock';
 
 interface AccountsViewProps {
   accounts: Account[];
@@ -81,6 +83,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
   // Drilldown Modal state
   const [selectedAccountForDrilldown, setSelectedAccountForDrilldown] = useState<Account | null>(null);
   const [showAllDrilldownTransactions, setShowAllDrilldownTransactions] = useState<boolean>(false);
+
+  // Suspend background scrolling when any modal is open
+  useScrollLock(isFormModalOpen || isColumnModalOpen || !!selectedAccountForDrilldown);
 
   const balances = calculateAccountBalances(accounts, transactions);
 
@@ -332,48 +337,44 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header Bar */}
-      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border rounded-2xl p-5 transition-all shadow-sm ${
-        isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-200/50' : 'bg-slate-900/90 border-slate-800 text-white shadow-xl'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
+      {/* Header Bar with iOS Scroll Collapse */}
+      <ScrollHeader
+        title="Chart of Accounts"
+        isLight={isLight}
+        tabPosition={settings.tabPosition}
+        icon={
+          <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
             isLight ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
           }`}>
-            <Landmark className="w-5 h-5" />
+            <Landmark className="w-4 h-4" />
           </div>
-          <div>
-            <h2 className={`text-lg font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>Chart of Accounts</h2>
-            <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              Standard 7-category accounting classification with live debit/credit net balances
-            </p>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsColumnModalOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all shadow-xs ${
+                isLight
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+              }`}
+              title="Customize Columns"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Columns</span>
+            </button>
+
+            <button
+              onClick={handleOpenCreateModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 !text-white text-white shadow-md shadow-indigo-600/30 transition-all active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5 !text-white text-white" />
+              <span className="!text-white text-white">Create Account</span>
+            </button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setIsColumnModalOpen(true)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all shadow-sm ${
-              isLight
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-            }`}
-            title="Customize Columns"
-          >
-            <SlidersHorizontal className="w-4 h-4 text-indigo-500" />
-            <span>Columns</span>
-          </button>
-
-          <button
-            onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 !text-white text-white shadow-md shadow-indigo-600/30 transition-all active:scale-95"
-          >
-            <Plus className="w-4 h-4 !text-white text-white" />
-            <span className="!text-white text-white">Create Account</span>
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Category Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
