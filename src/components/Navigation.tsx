@@ -8,6 +8,7 @@ import {
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { AppSettings, NavTabId } from '../core/types';
+import { HapticsService } from '../core/haptics';
 
 export type ActiveTab = NavTabId;
 
@@ -92,7 +93,10 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  HapticsService.selection();
+                  setActiveTab(tab.id);
+                }}
                 className={`relative flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all duration-200 active:scale-90 ${
                   isActive
                     ? isLight

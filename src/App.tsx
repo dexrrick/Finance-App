@@ -27,6 +27,26 @@ export function App() {
   );
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [visitedTabs, setVisitedTabs] = useState<Set<ActiveTab>>(() => new Set(['dashboard']));
+
+  // GPU-accelerated tab change with View Transitions and View Keep-Alive
+  const handleTabChange = (newTab: ActiveTab) => {
+    if (newTab === activeTab) return;
+    setVisitedTabs((prev) => {
+      if (prev.has(newTab)) return prev;
+      const next = new Set(prev);
+      next.add(newTab);
+      return next;
+    });
+
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      (document as any).startViewTransition(() => {
+        setActiveTab(newTab);
+      });
+    } else {
+      setActiveTab(newTab);
+    }
+  };
 
   // Transaction Modal State
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -267,81 +287,93 @@ export function App() {
       {tabPosition === 'top' && (
         <Navigation
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           settings={settings}
         />
       )}
 
       {/* Main App Body - Without Top App Name Bar */}
       <main className={`flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 ${mainPadding}`}>
-        {activeTab === 'dashboard' && (
-          <Dashboard
-            accounts={accounts}
-            transactions={transactions}
-            settings={settings}
-            onOpenTransactionModal={handleOpenTransactionModal}
-            onSelectTransactionToEdit={handleSelectTransactionToEdit}
-            onNavigateToTab={(tab) => setActiveTab(tab as NavTabId)}
-            onUpdateSettings={setSettings}
-          />
+        {visitedTabs.has('dashboard') && (
+          <div className={activeTab === 'dashboard' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+            <Dashboard
+              accounts={accounts}
+              transactions={transactions}
+              settings={settings}
+              onOpenTransactionModal={handleOpenTransactionModal}
+              onSelectTransactionToEdit={handleSelectTransactionToEdit}
+              onNavigateToTab={(tab) => handleTabChange(tab as NavTabId)}
+              onUpdateSettings={setSettings}
+            />
+          </div>
         )}
 
-        {activeTab === 'journal' && (
-          <JournalView
-            transactions={transactions}
-            accounts={accounts}
-            settings={settings}
-            onEditTransaction={handleSelectTransactionToEdit}
-            onDeleteTransaction={handleDeleteTransaction}
-            onDeleteMultipleTransactions={handleDeleteMultipleTransactions}
-            onRestoreTransactions={handleRestoreTransactions}
-            undoUpdateInfo={undoUpdateInfo}
-            onUndoUpdate={handleUndoUpdate}
-            onOpenNewTransaction={() => handleOpenTransactionModal('journal')}
-          />
+        {visitedTabs.has('journal') && (
+          <div className={activeTab === 'journal' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+            <JournalView
+              transactions={transactions}
+              accounts={accounts}
+              settings={settings}
+              onEditTransaction={handleSelectTransactionToEdit}
+              onDeleteTransaction={handleDeleteTransaction}
+              onDeleteMultipleTransactions={handleDeleteMultipleTransactions}
+              onRestoreTransactions={handleRestoreTransactions}
+              undoUpdateInfo={undoUpdateInfo}
+              onUndoUpdate={handleUndoUpdate}
+              onOpenNewTransaction={() => handleOpenTransactionModal('journal')}
+            />
+          </div>
         )}
 
-        {activeTab === 'reconcile' && (
-          <BankReconciliationView
-            accounts={accounts}
-            transactions={transactions}
-            settings={settings}
-            onSaveTransactions={handleSaveReconciledTransactions}
-            onUpdateSettings={setSettings}
-          />
+        {visitedTabs.has('reconcile') && (
+          <div className={activeTab === 'reconcile' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+            <BankReconciliationView
+              accounts={accounts}
+              transactions={transactions}
+              settings={settings}
+              onSaveTransactions={handleSaveReconciledTransactions}
+              onUpdateSettings={setSettings}
+            />
+          </div>
         )}
 
-        {activeTab === 'accounts' && (
-          <AccountsView
-            accounts={accounts}
-            transactions={transactions}
-            settings={settings}
-            onAddAccount={handleAddAccount}
-            onUpdateAccount={handleUpdateAccount}
-            onUpdateSettings={setSettings}
-            onEditTransaction={handleSelectTransactionToEdit}
-          />
+        {visitedTabs.has('accounts') && (
+          <div className={activeTab === 'accounts' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+            <AccountsView
+              accounts={accounts}
+              transactions={transactions}
+              settings={settings}
+              onAddAccount={handleAddAccount}
+              onUpdateAccount={handleUpdateAccount}
+              onUpdateSettings={setSettings}
+              onEditTransaction={handleSelectTransactionToEdit}
+            />
+          </div>
         )}
 
-        {activeTab === 'reports' && (
-          <ReportsView
-            accounts={accounts}
-            transactions={transactions}
-            settings={settings}
-          />
+        {visitedTabs.has('reports') && (
+          <div className={activeTab === 'reports' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+            <ReportsView
+              accounts={accounts}
+              transactions={transactions}
+              settings={settings}
+            />
+          </div>
         )}
 
-        {activeTab === 'settings' && (
-          <SettingsView
-            settings={settings}
-            onUpdateSettings={setSettings}
-            currentUser={currentUser}
-            onUpdateUser={setCurrentUser}
-            accounts={accounts}
-            transactions={transactions}
-            onRestoreData={handleRestoreData}
-            trialBalanceBalanced={trialBalance.isBalanced}
-          />
+        {visitedTabs.has('settings') && (
+          <div className={activeTab === 'settings' ? 'block animate-tab-fade gpu-layer' : 'hidden'}>
+            <SettingsView
+              settings={settings}
+              onUpdateSettings={setSettings}
+              currentUser={currentUser}
+              onUpdateUser={setCurrentUser}
+              accounts={accounts}
+              transactions={transactions}
+              onRestoreData={handleRestoreData}
+              trialBalanceBalanced={trialBalance.isBalanced}
+            />
+          </div>
         )}
       </main>
 
@@ -356,7 +388,7 @@ export function App() {
       {tabPosition === 'bottom' && (
         <Navigation
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           settings={settings}
         />
       )}

@@ -12,6 +12,7 @@ import {
 import { Account, EntryLeg, Transaction } from '../core/types';
 import { formatCurrency, round2, validateTransaction } from '../core/accounting';
 import { CurrencyService, SUPPORTED_CURRENCIES } from '../core/currencyService';
+import { HapticsService } from '../core/haptics';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -55,6 +56,34 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [categoryAccountId, setCategoryAccountId] = useState<string>('');
   const [isUpdateConfirmOpen, setIsUpdateConfirmOpen] = useState<boolean>(false);
   const [pendingTxToSave, setPendingTxToSave] = useState<Transaction | null>(null);
+
+  // Smooth entrance & exit transition state for mobile bottom-sheet & desktop modal
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      setIsClosing(false);
+      HapticsService.impact('light');
+    } else if (isRendered) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        setIsClosing(false);
+      }, 220);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isRendered]);
+
+  const handleSmoothClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsRendered(false);
+      setIsClosing(false);
+    }, 200);
+  };
 
   // Multi-Currency State
   const [selectedCurrency, setSelectedCurrency] = useState<string>(baseCurrency);
@@ -378,27 +407,45 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setPendingTxToSave(finalizedTx);
       setIsUpdateConfirmOpen(true);
     } else {
+      HapticsService.success();
       onSave(finalizedTx);
-      onClose();
+      handleSmoothClose();
     }
   };
 
   const handleConfirmUpdate = () => {
     if (pendingTxToSave) {
+      HapticsService.success();
       onSave(pendingTxToSave);
       setIsUpdateConfirmOpen(false);
       setPendingTxToSave(null);
-      onClose();
+      handleSmoothClose();
     }
   };
 
-  if (!isOpen) return null;
+  if (!isRendered) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] overflow-y-auto bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className={`border rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transition-all ${
-        isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
-      }`}>
+    <div
+      className={`fixed inset-0 z-[80] overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity duration-200 ${
+        isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100 animate-backdrop-fade'
+      }`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleSmoothClose();
+      }}
+    >
+      <div
+        className={`border w-full max-w-2xl shadow-2xl overflow-hidden transition-all duration-200 gpu-layer rounded-t-3xl sm:rounded-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col ${
+          isClosing
+            ? 'translate-y-full sm:scale-95 sm:opacity-0'
+            : 'animate-sheet-up sm:animate-modal-pop'
+        } ${
+          isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+        }`}
+      >
+        {/* Mobile Sheet Pull Indicator */}
+        <div className="w-12 h-1.5 bg-slate-400/40 rounded-full mx-auto mt-2.5 mb-1 sm:hidden shrink-0" />
+
         {/* Header */}
         <div className={`px-4 py-3 sm:px-6 sm:py-3.5 border-b flex items-center justify-between shrink-0 ${
           isLight ? 'border-slate-200 bg-slate-50/80 text-slate-900' : 'border-slate-800 bg-slate-950/60 text-white'
@@ -430,7 +477,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </button>
 
             <button
-              onClick={onClose}
+              onClick={handleSmoothClose}
               className={`p-1.5 rounded-lg transition-colors ${
                 isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
@@ -1208,7 +1255,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div className={`flex items-center justify-end gap-2.5 pt-3 border-t shrink-0 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleSmoothClose}
               className={`px-4 py-2 text-xs font-medium rounded-xl transition-colors ${
                 isLight ? 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200' : 'text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700'
               }`}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, ArrowDownLeft, ArrowUpRight, RefreshCw, BookOpen, X } from 'lucide-react';
 import { TabPositionPreference } from '../core/types';
+import { HapticsService } from '../core/haptics';
 
 interface FloatingRecordButtonProps {
   onOpenModal: (mode: 'expense' | 'income' | 'transfer' | 'journal') => void;
@@ -25,8 +26,14 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
   };
 
   const handleSelect = (mode: 'expense' | 'income' | 'transfer' | 'journal') => {
+    HapticsService.selection();
     setIsOpen(false);
     onOpenModal(mode);
+  };
+
+  const handleToggle = () => {
+    HapticsService.impact('light');
+    setIsOpen(!isOpen);
   };
 
   const popoverButtonClass = `flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border shadow-xl text-xs font-semibold backdrop-blur-md transition-all active:scale-95 ${
@@ -43,7 +50,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
       <div className="pointer-events-auto flex flex-col items-end">
       {/* Expanded Quick Action Popover */}
       {isOpen && (
-        <div className="mb-3 flex flex-col items-end gap-2 animate-fade-in">
+        <div className="mb-3 flex flex-col items-end gap-2 animate-fade-in-fast gpu-layer">
           {/* Backdrop dismiss */}
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-xs -z-10"
@@ -94,7 +101,7 @@ export const FloatingRecordButton: React.FC<FloatingRecordButtonProps> = ({
 
       {/* Main Floating Trigger Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         aria-label="Add Transaction"
         className={`w-14 h-14 rounded-full flex items-center justify-center !text-white text-white shadow-2xl transition-all duration-200 active:scale-90 ${
           isOpen
